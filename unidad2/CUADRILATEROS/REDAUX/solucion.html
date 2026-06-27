@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tema 2: Rotores Reuleaux - Memoria de Cálculo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Estilos de KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <style>
+        
+        :root {
+            --primary: #1e3a5f;
+            --secondary: #2c5282;
+            --accent: #3182ce;
+            --highlight: #f6ad55;
+            --dark: #1a202c;
+            --light: #f7fafc;
+            --warning: #dd6b20;
+            --success: #38a169;
+            --geogebra: #69b34c;
+            --gold: #ffd700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            line-height: 1.7;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 50%, var(--secondary) 100%);
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8em, 4vw, 3em);
+            margin-bottom: 15px;
+        }
+
+        .hero h1 span { color: var(--highlight); }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(246, 173, 85, 0.2);
+            border: 2px solid var(--highlight);
+            color: var(--highlight);
+            padding: 8px 25px;
+            border-radius: 30px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+        /* PAGE SEPARATOR */
+        .page-separator {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            margin: 50px 0;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .page-separator h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .page-number {
+            display: inline-block;
+            background: var(--highlight);
+            color: var(--dark);
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        /* STEP BOX */
+        .step-box {
+            background: white;
+            border-radius: 15px;
+            padding: 35px;
+            margin: 30px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--geogebra);
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -18px;
+            left: 25px;
+            background: var(--geogebra);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2em;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        .step-box h3 {
+            color: var(--primary);
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-box h4 {
+            color: var(--secondary);
+            margin: 20px 0 12px 0;
+            font-size: 1.15em;
+        }
+
+        .step-box p { margin-bottom: 12px; color: #555; }
+
+        .step-box ul, .step-box ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .step-box li { margin: 10px 0; }
+
+        /* CODE BLOCK */
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 18px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            margin: 15px 0;
+            overflow-x: auto;
+            border-left: 4px solid var(--geogebra);
+        }
+
+        /* FORMULA BOX */
+        .formula-box {
+            color: var(--dark);
+            border-left: 4px solid var(--accent);
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .formula-box h4 {
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        /* TIP/WARNING BOXES */
+        .tip-box {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid var(--warning);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .info-box {
+            background: #d4edda;
+            border-left: 5px solid var(--success);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        /* PASSWORD PROTECTION */
+        .password-container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 600px;
+            margin: 40px auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .password-container i {
+            font-size: 4em;
+            color: var(--warning);
+            margin-bottom: 20px;
+        }
+
+        .password-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: var(--warning);
+        }
+
+        .btn-unlock {
+            background: linear-gradient(135deg, var(--warning), var(--highlight));
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-unlock:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .solution-content { display: none; }
+
+        /* CALCULATION BOX */
+        .calculation-box {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px solid var(--success);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .calculation-box .step-explanation {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            font-style: italic;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .calculation-box .formula {
+            color: var(--primary);
+            font-size: 1.1em;
+            margin: 12px 0;
+            line-height: 1.8;
+        }
+
+        .calculation-box .result {
+            color: var(--success);
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 2px dashed #ccc;
+        }
+
+        .highlight-result {
+            background: linear-gradient(135deg, var(--gold), #ffed4e);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 25px 0;
+            font-weight: bold;
+            color: var(--dark);
+            font-size: 1.15em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* TABLE */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .data-table tr:hover { background: #f5f5f5; }
+
+        /* CHECKLIST */
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            padding: 10px 0 10px 35px;
+            position: relative;
+            font-size: 1.05em;
+        }
+
+        .checklist li::before {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--geogebra);
+        }
+
+        /* CANVAS */
+        .canvas-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8f9fa;
+            max-width: 100%;
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        @media (max-width: 768px) {
+            .step-box { padding: 25px; }
+            .page-separator h2 { font-size: 1.6em; }
+        }
+    
+        
+/* ==========================================================================
+   NAVIGATION BAR & GLOBAL THEME
+   ========================================================================== */
+:root {
+    --primary: #1e3a5f;
+    --secondary: #2c5282;
+    --accent: #3182ce;
+    --highlight: #f6ad55;
+    --dark: #1a202c;
+    --light: #f7fafc;
+    --warning: #dd6b20;
+    --success: #38a169;
+    --geogebra: #69b34c;
+    --gold: #ffd700;
+}
+
+.main-tabs-nav {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(26, 32, 44, 0.95);
+    border-bottom: 2px solid var(--accent);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.tabs-nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 20px;
+}
+
+.main-tab-button {
+    background: transparent;
+    border: none;
+    color: rgba(240, 248, 255, 0.7);
+    padding: 12px 24px;
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(0.85em, 1.8vw, 1.05em);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.main-tab-button:hover {
+    color: var(--highlight);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.main-tab-button.active {
+    color: var(--dark);
+    background: var(--highlight);
+    box-shadow: 0 0 15px rgba(246, 173, 85, 0.4);
+}
+
+.tab-header-block {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: 20px;
+}
+
+.tab-header-block h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8em, 4vw, 2.8em);
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.tab-header-block h1 span {
+    color: var(--highlight);
+}
+
+.tab-header-block p {
+    font-size: 1em;
+    opacity: 0.9;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.formula-box .katex-display {
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+        
+        /* Table Styles from tema2 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .data-table th, .data-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        .data-table tbody tr:hover {
+            background: #f7fafc;
+        }
+    </style>
+</head>
+<body>
+    <div class="tab-header-block">
+        <h1>Memoria de Cálculo y <span>Demostraciones</span></h1>
+        <p>Desarrollo matemático completo para el cálculo de áreas, volumen por revolución y eficiencia geométrica</p>
+    </div>
+    
+    <!-- NAVEGACIÓN POR PÁGINAS INDEPENDIENTES (STICKY) -->
+    <nav class="main-tabs-nav">
+        <div class="tabs-nav-container">
+            <a class="main-tab-button" href="index.html"><i class="fas fa-book"></i> 1. Presentación</a><a class="main-tab-button" href="guia.html"><i class="fas fa-drafting-compass"></i> 2. Guía</a><a class="main-tab-button active" href="solucion.html"><i class="fas fa-graduation-cap"></i> 3. Solución</a><a class="main-tab-button" href="generador.html"><i class="fas fa-cogs"></i> 4. Generador GeoGebra</a>
+        </div>
+    </nav>
+    
+    
+    <div class="container" style="margin-top: 30px;">
+        <div class="page-number">PÁGINA 3</div>
+            <h2>Solución Completa del Ejercicio</h2>
+            <p style="font-size: 1.1em; opacity: 0.9;">Desarrollo matemático completo aplicando geometría plana de polígonos</p>
+        </div>
+
+        <!-- PASSWORD PROTECTION -->
+        <div class="password-container" id="passwordContainer">
+            <i class="fas fa-lock"></i>
+            <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 1.8em;">Contenido Protegido</h3>
+            <p>Esta sección contiene la solución completa con demostraciones matemáticas. Ingresa la clave para acceder.</p>
+            <input type="password" class="password-input" id="passwordInput" placeholder="Ingresa la clave">
+            <br>
+            <button class="btn-unlock" onclick="unlockSolution()">
+                <i class="fas fa-unlock"></i> Desbloquear Solución
+            </button>
+            <p class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> Clave incorrecta. Inténtalo de nuevo.
+            </p>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #666;">
+                <i class="fas fa-key"></i> Pista: Año histórico importante
+            </p>
+        </div>
+
+        <!-- SOLUTION CONTENT -->
+        <div class="solution-content" id="solutionContent">\n
+            <!-- Mathos AI Style Video Card -->
+            <div class="step-box" style="border-left-color: var(--accent); background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
+                <div class="step-number" style="background: var(--accent);"><i class="fas fa-video"></i></div>
+                <h3><i class="fab fa-youtube" style="color: #e53e3e;"></i> Video Tutor: Demostración del Área de Reuleaux (Estilo Mathos AI)</h3>
+                <p style="margin-top: 10px; margin-bottom: 20px; color: #4a5568;">
+                    Visualiza la explicación detallada y el desarrollo paso a paso del área de un triángulo de Reuleaux y su cálculo de ancho constante, ideal para el autoaprendizaje.
+                </p>
+                <div style="position: relative; width: 100%; max-width: 720px; margin: 0 auto; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; border: 2px solid #cbd5e0; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" src="https://www.youtube-nocookie.com/embed/-eQaF6OmWKw" title="Reuleaux Triangles - Math tutor step by step" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </div>
+                <div class="tip-box" style="margin-top: 20px;">
+                    <i class="fas fa-lightbulb"></i> <strong>Explicación:</strong> Este video descompone los tres arcos circulares y demuestra analíticamente el área diferencial de cavidad $\Delta A$ mediante geometría paso a paso.
+                </div>
+            </div>
+
+
+            <!-- DEMOSTRACIÓN 1 -->
+            <div class="step-box" style="border-left-color: var(--success);">
+                <div class="step-number" style="background: var(--success);">1</div>
+                <h3><i class="fas fa-square-root-alt"></i> Área del Triángulo de Reuleaux - Demostración Completa</h3>
+
+                <div class="calculation-box">
+                    <div class="step-explanation">
+                        <strong>Fundamento:</strong> El Reuleaux se descompone en el triángulo equilátero central más 3 segmentos circulares congruentes.
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 1.1:</strong> Área del triángulo equilátero de lado w<br>
+                        A_triángulo = (√3/4) × w²<br>
+                        A_triángulo = 0.43301 × w²
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 1.2:</strong> Área de cada sector circular de 60°<br>
+                        A_sector = (60°/360°) × π × w²<br>
+                        A_sector = (1/6) × π × w²<br>
+                        A_sector = πw²/6 ≈ 0.52360 × w²
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 1.3:</strong> Área del triángulo isósceles dentro del sector<br>
+                        Este triángulo tiene 2 lados = w y ángulo = 60°<br>
+                        A_triángulo_isósceles = (1/2) × w × w × sen(60°)<br>
+                        A_triángulo_isósceles = (1/2) × w² × (√3/2)<br>
+                        A_triángulo_isósceles = √3w²/4
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 1.4:</strong> Área de cada segmento circular<br>
+                        A_segmento = A_sector - A_triángulo_isósceles<br>
+                        A_segmento = πw²/6 - √3w²/4
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 1.5:</strong> Área total del Reuleaux<br>
+                        A_Reuleaux = A_triángulo + 3 × A_segmento<br>
+                        A_Reuleaux = √3w²/4 + 3(πw²/6 - √3w²/4)<br>
+                        A_Reuleaux = √3w²/4 + πw²/2 - 3√3w²/4<br>
+                        A_Reuleaux = πw²/2 - 2√3w²/4<br>
+                        A_Reuleaux = (π - √3)w²/2
+                    </div>
+
+                    <div class="result">
+                        ÁREA DEL REULEAUX:<br>
+                        A_Reuleaux = (π - √3) × w² / 2<br>
+                        A_Reuleaux ≈ 0.70477 × w²
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="reuleauxDecomp" width="700" height="450"></canvas>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9em;"><em>Figura: Descomposición del Reuleaux en triángulo equilátero + 3 segmentos circulares</em></p>
+                </div>
+            </div>
+
+            <!-- DEMOSTRACIÓN 2 -->
+            <div class="step-box" style="border-left-color: var(--success);">
+                <div class="step-number" style="background: var(--success);">2</div>
+                <h3><i class="fas fa-circle"></i> Área del Círculo Circunscrito</h3>
+
+                <div class="calculation-box">
+                    <div class="step-explanation">
+                        <strong>Fundamento:</strong> El círculo pasa por los 3 vértices del triángulo equilátero. Su radio es la distancia del centroide a cualquier vértice.
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 2.1:</strong> Radio del círculo circunscrito<br>
+                        En un triángulo equilátero, el centroide divide la altura en razón 2:1<br>
+                        Altura del triángulo: h = w√3/2<br>
+                        R = (2/3) × h = (2/3) × w√3/2<br>
+                        R = w/√3 ≈ 0.57735 × w
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 2.2:</strong> Área del círculo<br>
+                        A_círculo = π × R²<br>
+                        A_círculo = π × (w/√3)²<br>
+                        A_círculo = π × w²/3
+                    </div>
+
+                    <div class="result">
+                        ÁREA DEL CÍRCULO CIRCUNSCRITO:<br>
+                        A_círculo = πw²/3<br>
+                        A_círculo ≈ 1.04720 × w²
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEMOSTRACIÓN 3 -->
+            <div class="step-box" style="border-left-color: var(--success);">
+                <div class="step-number" style="background: var(--success);">3</div>
+                <h3><i class="fas fa-minus-square"></i> Diferencia Métrica Exacta ΔA</h3>
+
+                <div class="calculation-box">
+                    <div class="step-explanation">
+                        <strong>Interpretación:</strong> ΔA representa las 3 cavidades entre el círculo y el Reuleaux que se llenan con crudo durante el bombeo.
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 3.1:</strong> Plantear la diferencia<br>
+                        ΔA = A_círculo - A_Reuleaux
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 3.2:</strong> Sustituir las expresiones<br>
+                        ΔA = πw²/3 - (π - √3)w²/2
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 3.3:</strong> Factor común w²<br>
+                        ΔA = w² × [π/3 - (π - √3)/2]
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 3.4:</strong> Denominador común (6)<br>
+                        ΔA = w² × [2π/6 - 3(π - √3)/6]<br>
+                        ΔA = w² × [2π - 3π + 3√3]/6<br>
+                        ΔA = w² × [3√3 - π]/6
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 3.5:</strong> Valor numérico<br>
+                        3√3 - π ≈ 3(1.73205) - 3.14159<br>
+                        3√3 - π ≈ 5.19615 - 3.14159<br>
+                        3√3 - π ≈ 2.05456<br>
+                        ΔA ≈ w² × 2.05456/6<br>
+                        ΔA ≈ 0.34243 × w²
+                    </div>
+
+                    <div class="result">
+                        DIFERENCIA DE ÁREA EXACTA:<br>
+                        ΔA = w² × (3√3 - π) / 6<br>
+                        ΔA ≈ 0.34243 × w²
+                    </div>
+                </div>
+
+                <div class="highlight-result">
+                    <i class="fas fa-trophy"></i> RESULTADO CLAVE:<br>
+                    ΔA = w²(3√3 - π)/6 ≈ 0.34243w²<br>
+                    <span style="font-size: 0.85em; font-weight: normal; display: block; margin-top: 10px;">
+                        Esto representa el 32.5% del área del círculo circunscrito
+                    </span>
+                </div>
+            </div>
+
+            <!-- DEMOSTRACIÓN 4 -->
+            <div class="step-box" style="border-left-color: var(--success);">
+                <div class="step-number" style="background: var(--success);">4</div>
+                <h3><i class="fas fa-cube"></i> Volumen de Bombeo por Revolución</h3>
+
+                <div class="calculation-box">
+                    <div class="step-explanation">
+                        <strong>Aplicación industrial:</strong> El volumen desplazado es el área ΔA extruida a lo largo de la longitud L del rotor.
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 4.1:</strong> Fórmula del volumen<br>
+                        V_rev = ΔA × L
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 4.2:</strong> Sustituir ΔA<br>
+                        V_rev = [w²(3√3 - π)/6] × L
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 4.3:</strong> Ejemplo numérico<br>
+                        Si w = 0.1 m y L = 2 m:<br>
+                        ΔA = (0.1)² × 0.34243 = 0.003424 m²<br>
+                        V_rev = 0.003424 × 2 = 0.006849 m³<br>
+                        V_rev = 6.849 litros por revolución
+                    </div>
+
+                    <div class="result">
+                        VOLUMEN POR REVOLUCIÓN:<br>
+                        V_rev = w² × L × (3√3 - π) / 6
+                    </div>
+                </div>
+            </div>
+
+            <!-- EFICIENCIA -->
+            <div class="step-box" style="border-left-color: var(--geogebra);">
+                <div class="step-number" style="background: var(--geogebra);">5</div>
+                <h3><i class="fas fa-percentage"></i> Eficiencia Geométrica</h3>
+
+                <div class="calculation-box">
+                    <div class="step-explanation">
+                        <strong>Definición:</strong> Porcentaje del área del Reuleaux respecto al círculo circunscrito.
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 5.1:</strong> Fórmula de eficiencia<br>
+                        η = A_Reuleaux / A_círculo × 100%
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 5.2:</strong> Sustituir<br>
+                        η = [(π - √3)w²/2] / [πw²/3] × 100%<br>
+                        η = [(π - √3)/2] × [3/π] × 100%<br>
+                        η = 3(π - √3)/(2π) × 100%
+                    </div>
+
+                    <div class="formula">
+                        <strong>Paso 5.3:</strong> Valor numérico<br>
+                        η = 3(3.14159 - 1.73205)/(2 × 3.14159) × 100%<br>
+                        η = 3(1.40954)/6.28318 × 100%<br>
+                        η = 4.22862/6.28318 × 100%<br>
+                        η = 0.6746 × 100%<br>
+                        η = 67.46%
+                    </div>
+
+                    <div class="result">
+                        EFICIENCIA GEOMÉTRICA:<br>
+                        η = 3(π - √3)/(2π) × 100%<br>
+                        η ≈ 67.46% (constante, independiente de w)
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <i class="fas fa-check-circle"></i> <strong>Propiedad notable:</strong> La eficiencia del 67.46% es una constante geométrica del triángulo de Reuleaux, sin importar su tamaño.
+                </div>
+            </div>
+
+            <!-- TABLA DE RESULTADOS -->
+            <div class="step-box" style="border-left-color: var(--success);">
+                <div class="step-number" style="background: var(--success);">6</div>
+                <h3><i class="fas fa-table"></i> Tabla de Resultados para Diferentes Valores de w</h3>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>w (m)</th>
+                            <th>A_Reuleaux (m²)</th>
+                            <th>A_círculo (m²)</th>
+                            <th>ΔA (m²)</th>
+                            <th>V_rev con L=2m (L)</th>
+                            <th>Eficiencia (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>0.05</td><td>0.00176</td><td>0.00262</td><td>0.000856</td><td>0.00171</td><td>67.46%</td></tr>
+                        <tr><td>0.10</td><td>0.00705</td><td>0.01047</td><td>0.00342</td><td>0.00685</td><td>67.46%</td></tr>
+                        <tr><td>0.15</td><td>0.01586</td><td>0.02356</td><td>0.00770</td><td>0.01541</td><td>67.46%</td></tr>
+                        <tr><td>0.20</td><td>0.02819</td><td>0.04189</td><td>0.01370</td><td>0.02739</td><td>67.46%</td></tr>
+                        <tr><td>0.50</td><td>0.17619</td><td>0.26180</td><td>0.08561</td><td>0.17121</td><td>67.46%</td></tr>
+                        <tr style="background: #d4edda; font-weight: bold;">
+                            <td>1.00</td><td>0.70477</td><td>1.04720</td><td>0.34243</td><td>0.68486</td><td>67.46%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RESUMEN FINAL -->
+            <div class="step-box" style="background: linear-gradient(135deg, #fffaf0, #feebc8); border-left-color: var(--warning);">
+                <div class="step-number" style="background: var(--warning);"><i class="fas fa-trophy"></i></div>
+                <h3><i class="fas fa-medal"></i> Resumen de Resultados Clave</h3>
+
+                <div class="formula-box">
+                    <h4>Área del Reuleaux:</h4>
+                    $$A_{Reuleaux} = \frac{(\pi - \sqrt{3}) \cdot w^2}{2} \approx 0.70477 \cdot w^2$$
+                </div>
+
+                <div class="formula-box">
+                    <h4>Área del círculo circunscrito:</h4>
+                    $$A_{círculo} = \frac{\pi \cdot w^2}{3} \approx 1.04720 \cdot w^2$$
+                </div>
+
+                <div class="formula-box">
+                    <h4>Diferencia de áreas:</h4>
+                    $$\Delta A = \frac{(3\sqrt{3} - \pi) \cdot w^2}{6} \approx 0.34243 \cdot w^2$$
+                </div>
+
+                <div class="formula-box">
+                    <h4>Volumen por revolución:</h4>
+                    $$V_{rev} = \frac{(3\sqrt{3} - \pi) \cdot w^2 \cdot L}{6}$$
+                </div>
+
+                <div class="formula-box">
+                    <h4>Eficiencia geométrica:</h4>
+                    $$\eta = \frac{3(\pi - \sqrt{3})}{2\pi} \times 100\% \approx 67.46\%$$
+                </div>
+
+                <div class="highlight-result">
+                    <i class="fas fa-check-double"></i> PROBLEMA RESUELTO COMPLETAMENTE<br>
+                    <span style="font-size: 0.9em; font-weight: normal;">
+                        Todas las demostraciones usan exclusivamente geometría plana de polígonos
+                    </span>
+                </div>
+            </div>
+
+        </div> <!-- Fin solution-content -->
+    </div>
+    </div>
+    
+    
+    <!-- FOOTER ÚNICO UNIFICADO -->
+    <footer>
+        <div class="container">
+            <p><strong>Tema 2: Rotores de Reuleaux - Aplicación de Ingeniería & GeoGebra</strong></p>
+            <p>Prototipo Digital del Rotor de Reuleaux para Bombas de Cavidad Progresiva (PCP)</p>
+            <p style="margin-top: 15px; font-size: 0.9em;">
+                <i class="fas fa-graduation-cap"></i> Material Educativo Integrado · Ingeniería en Petróleos / Mecánica
+            </p>
+        </div>
+    </footer>
+
+
+    <script>
+        function renderMath() {
+            const target = document.getElementById('solutionContent');
+            if (target && target.style.display !== 'none') {
+                if (window.renderMathInElement) {
+                    renderMathInElement(target, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ]
+                    });
+                } else {
+                    setTimeout(renderMath, 50);
+                }
+            }
+        }
+
+        function unlockSolution() {
+            const password = document.getElementById('passwordInput').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const passwordContainer = document.getElementById('passwordContainer');
+            const solutionContent = document.getElementById('solutionContent');
+
+            if (password === '1980') {
+                passwordContainer.style.display = 'none';
+                solutionContent.style.display = 'block';
+                solutionContent.scrollIntoView({ behavior: 'smooth' });
+                renderMath();
+                setTimeout(drawReuleauxDecomp, 100);
+            } else {
+                errorMessage.style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const passInput = document.getElementById('passwordInput');
+            if (passInput) {
+                passInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        unlockSolution();
+                    }
+                });
+            }
+        });
+
+        function drawReuleauxDecomp() {
+            const canvas = document.getElementById('reuleauxDecomp');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const w = 180;
+
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, width, height);
+
+            const h = w * Math.sqrt(3) / 2;
+            const vertices = [
+                {x: centerX, y: centerY - h/3 * 1.5},
+                {x: centerX - w/2, y: centerY + h/3 * 1.5},
+                {x: centerX + w/2, y: centerY + h/3 * 1.5}
+            ];
+
+            ctx.fillStyle = 'rgba(56, 161, 105, 0.4)';
+            ctx.strokeStyle = '#38a169';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            ctx.lineTo(vertices[1].x, vertices[1].y);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(246, 173, 85, 0.5)';
+            ctx.strokeStyle = '#dd6b20';
+            ctx.lineWidth = 2;
+            
+            // Segment 1
+            ctx.beginPath();
+            ctx.moveTo(vertices[1].x, vertices[1].y);
+            ctx.arc(vertices[0].x, vertices[0].y, w, 
+                Math.atan2(vertices[1].y - vertices[0].y, vertices[1].x - vertices[0].x),
+                Math.atan2(vertices[2].y - vertices[0].y, vertices[2].x - vertices[0].x),
+                false);
+            ctx.lineTo(vertices[1].x, vertices[1].y);
+            ctx.fill();
+            ctx.stroke();
+
+            // Segment 2
+            ctx.beginPath();
+            ctx.moveTo(vertices[2].x, vertices[2].y);
+            ctx.arc(vertices[1].x, vertices[1].y, w,
+                Math.atan2(vertices[2].y - vertices[1].y, vertices[2].x - vertices[1].x),
+                Math.atan2(vertices[0].y - vertices[1].y, vertices[0].x - vertices[1].x),
+                false);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.fill();
+            ctx.stroke();
+
+            // Segment 3
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            ctx.arc(vertices[2].x, vertices[2].y, w,
+                Math.atan2(vertices[0].y - vertices[2].y, vertices[0].x - vertices[2].x),
+                Math.atan2(vertices[1].y - vertices[2].y, vertices[1].x - vertices[2].x),
+                false);
+            ctx.lineTo(vertices[0].x, vertices[0].y);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#1e3a5f';
+            vertices.forEach((v, i) => {
+                ctx.beginPath();
+                ctx.arc(v.x, v.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText(String.fromCharCode(65 + i), v.x - 4, v.y + 4);
+                ctx.fillStyle = '#1e3a5f';
+            });
+
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.fillRect(20, 20, 250, 110);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(20, 20, 250, 110);
+
+            ctx.fillStyle = '#38a169';
+            ctx.fillRect(30, 35, 20, 15);
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText('Triángulo equilátero', 60, 47);
+
+            ctx.fillStyle = 'rgba(246, 173, 85, 0.5)';
+            ctx.fillRect(30, 60, 20, 15);
+            ctx.fillStyle = '#333';
+            ctx.fillText('3 segmentos circulares', 60, 72);
+
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('Reuleaux = T + 3×Segmentos', 30, 100);
+            ctx.fillText('A = (π-√3)w²/2', 30, 118);
+        }
+    </script>
+</body>
+</html>
