@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tema 2: Rotores Reuleaux - Presentación</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Estilos de KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Three.js & OrbitControls CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <style>
+        
+        :root {
+            --primary: #1e3a5f;
+            --secondary: #2c5282;
+            --accent: #3182ce;
+            --highlight: #f6ad55;
+            --dark: #1a202c;
+            --light: #f7fafc;
+            --warning: #dd6b20;
+            --success: #38a169;
+            --geogebra: #69b34c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            line-height: 1.7;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 50%, var(--secondary) 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2em, 5vw, 3.5em);
+            margin-bottom: 15px;
+        }
+
+        .hero h1 span {
+            color: var(--highlight);
+            display: block;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(246, 173, 85, 0.2);
+            border: 2px solid var(--highlight);
+            color: var(--highlight);
+            padding: 8px 25px;
+            border-radius: 30px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        section {
+            padding: 60px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8em, 4vw, 2.5em);
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .tools-bar {
+            background: linear-gradient(90deg, var(--geogebra), #5a9e3f);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            box-shadow: 0 5px 20px rgba(105, 179, 76, 0.3);
+        }
+
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .tool-item i {
+            font-size: 1.5em;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 40px 0;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .content-card h3 {
+            color: var(--primary);
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dark-formula-box {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .dark-formula-box h4 {
+            color: var(--highlight);
+            margin-bottom: 15px;
+        }
+
+        .geogebra-features {
+            background: linear-gradient(135deg, #f0fff4, #c6f6d5);
+            border-left: 5px solid var(--geogebra);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .geogebra-features h4 {
+            color: var(--geogebra);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            padding: 10px 0 10px 35px;
+            position: relative;
+            font-size: 1.05em;
+        }
+
+        .checklist li::before {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--geogebra);
+            font-size: 1.2em;
+        }
+
+        .deliverable-box {
+            background: linear-gradient(135deg, #fffaf0, #feebc8);
+            border-left: 5px solid var(--warning);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+        }
+
+        .deliverable-box h4 {
+            color: var(--warning);
+            margin-bottom: 15px;
+        }
+
+        .video-info {
+            background: linear-gradient(135deg, #1a202c, #2d3748);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .video-info i {
+            font-size: 3em;
+            color: var(--highlight);
+            margin-bottom: 15px;
+        }
+
+        .step-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--accent);
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 25px;
+            background: var(--accent);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2em;
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    
+        
+/* ==========================================================================
+   NAVIGATION BAR & GLOBAL THEME
+   ========================================================================== */
+:root {
+    --primary: #1e3a5f;
+    --secondary: #2c5282;
+    --accent: #3182ce;
+    --highlight: #f6ad55;
+    --dark: #1a202c;
+    --light: #f7fafc;
+    --warning: #dd6b20;
+    --success: #38a169;
+    --geogebra: #69b34c;
+    --gold: #ffd700;
+}
+
+.main-tabs-nav {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(26, 32, 44, 0.95);
+    border-bottom: 2px solid var(--accent);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.tabs-nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 20px;
+}
+
+.main-tab-button {
+    background: transparent;
+    border: none;
+    color: rgba(240, 248, 255, 0.7);
+    padding: 12px 24px;
+    font-family: 'Poppins', sans-serif;
+    font-size: clamp(0.85em, 1.8vw, 1.05em);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.main-tab-button:hover {
+    color: var(--highlight);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.main-tab-button.active {
+    color: var(--dark);
+    background: var(--highlight);
+    box-shadow: 0 0 15px rgba(246, 173, 85, 0.4);
+}
+
+.tab-header-block {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: 20px;
+}
+
+.tab-header-block h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8em, 4vw, 2.8em);
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.tab-header-block h1 span {
+    color: var(--highlight);
+}
+
+.tab-header-block p {
+    font-size: 1em;
+    opacity: 0.9;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.formula-box .katex-display {
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+        .anim-dot.active {
+            background: var(--highlight) !important;
+            transform: scale(1.3);
+            box-shadow: 0 0 8px rgba(246, 173, 85, 0.6);
+        }
+        .anim-btn {
+            transition: all 0.2s;
+        }
+        .anim-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        
+        /* Genially-style Hotspots */
+        .hotspot-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--highlight);
+            border: 2px solid white;
+            color: var(--dark);
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            z-index: 5;
+            position: relative;
+        }
+        .hotspot-btn:hover {
+            transform: scale(1.2);
+            background: var(--accent);
+            color: white;
+        }
+        .hotspot-ripple {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--highlight);
+            animation: rippleEffect 1.8s infinite ease-out;
+            pointer-events: none;
+            top: -2px;
+            left: -2px;
+            box-sizing: content-box;
+        }
+        @keyframes rippleEffect {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-badge">
+            <i class="fas fa-oil-well"></i> Tema 2 · Ingeniería en Petróleos / Mecánica
+        </div>
+        <h1>
+            Diseño de Bombas de Cavidad Progresiva
+            <span>Rotores Poligonales de Reuleaux</span>
+        </h1>
+        <p style="font-size: 1.1em; opacity: 0.95; max-width: 800px; margin: 0 auto;">
+            Prototipo digital interactivo en GeoGebra para análisis cinemático 
+            de polígonos de ancho constante en extracción de crudo pesado
+        </p>
+    </div>
+    
+    <!-- NAVEGACIÓN POR PÁGINAS INDEPENDIENTES (STICKY) -->
+    <nav class="main-tabs-nav">
+        <div class="tabs-nav-container">
+            <a class="main-tab-button active" href="index.html"><i class="fas fa-book"></i> 1. Presentación</a><a class="main-tab-button" href="guia.html"><i class="fas fa-drafting-compass"></i> 2. Guía</a><a class="main-tab-button" href="solucion.html"><i class="fas fa-graduation-cap"></i> 3. Solución</a><a class="main-tab-button" href="generador.html"><i class="fas fa-cogs"></i> 4. Generador GeoGebra</a>
+        </div>
+    </nav>
+    
+    <div class="container" style="margin-top: 30px;">
+        <!-- PAGE 1: PROBLEM PRESENTATION -->
+    <section style="background: white;">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Página 1 de 3</span>
+                <h2 class="section-title">Presentación del Problema de Diseño</h2>
+                <p class="section-subtitle">
+                    Contexto industrial y requerimientos del prototipo digital interactivo
+                </p>
+            </div>
+
+            <div class="content-grid">
+                <div class="content-card">
+                    <h3><i class="fas fa-industry"></i> Contexto Industrial</h3>
+                    <p>
+                        En la provincia, la extracción de <strong>crudo pesado</strong> requiere bombas 
+                        especializadas. Las <strong>Bombas de Cavidad Progresiva (PCP)</strong> utilizan 
+                        rotores con geometría de <strong>polígonos de Reuleaux</strong> (triángulo de 
+                        ancho constante).
+                    </p>
+                    <p style="margin-top: 15px;">
+                        A diferencia de un rotor circular, el triángulo de Reuleaux mantiene contacto 
+                        constante con el estator mientras rota, creando cavidades que se desplazan 
+                        axialmente para bombear el fluido viscoso.
+                    </p>
+
+                    <div class="geogebra-features" style="margin-top: 25px;">
+                        <h4><i class="fas fa-laptop-code"></i> ¿Por qué GeoGebra?</h4>
+                        <ul class="checklist">
+                            <li>Permite crear un prototipo digital interactivo</li>
+                            <li>El profesor puede mover vértices y ver cambios en tiempo real</li>
+                            <li>Muestra automáticamente: área, perímetro, ángulos, diagonales</li>
+                            <li>Es gratuito y no requiere instalación compleja</li>
+                            <li>Se puede exportar como archivo .ggb interactivo</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3><i class="fas fa-bullseye"></i> Objetivo del Proyecto</h3>
+                    <p>
+                        Desarrollar un <strong>prototipo digital interactivo en GeoGebra</strong> que 
+                        permita analizar cinemáticamente un rotor de Reuleaux para bombas PCP, 
+                        demostrando cómo varían sus propiedades métricas durante la rotación.
+                    </p>
+
+                    <div class="deliverable-box">
+                        <h4><i class="fas fa-tasks"></i> Entregables Obligatorios</h4>
+                        <ol style="margin-left: 20px; line-height: 2;">
+                            <li><strong>Archivo GeoGebra (.ggb)</strong> interactivo donde:
+                                <ul style="margin-top: 10px; margin-left: 20px;">
+                                    <li>Se puedan mover los vértices del polígono</li>
+                                    <li>Se visualice en tiempo real: área, perímetro, ángulos</li>
+                                    <li>Se muestre el círculo circunscrito</li>
+                                    <li>Se calcule la diferencia de área ΔA</li>
+                                </ul>
+                            </li>
+                            <li><strong>Video explicativo (3 minutos)</strong> que demuestre:
+                                <ul style="margin-top: 10px; margin-left: 20px;">
+                                    <li>Construcción geométrica del Reuleaux</li>
+                                    <li>Interactividad del prototipo</li>
+                                    <li>Cálculos geométricos realizados</li>
+                                    <li>Aplicación en bombas PCP</li>
+                                </ul>
+                            </li>
+                            <li><strong>Memoria de cálculo</strong> con demostración matemática de:
+                                <ul style="margin-top: 10px; margin-left: 20px;">
+                                    <li>Área del triángulo de Reuleaux</li>
+                                    <li>Diferencia ΔA con el círculo circunscrito</li>
+                                    <li>Volumen de bombeo por revolución</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            
+            <!-- Animador Interactivo de Áreas (Flash-like widget) -->
+            <div class="interactive-animator-card" style="background: white; border: 2px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 25px; margin: 35px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; box-sizing: border-box;">
+                <div style="text-align: center; width: 100%;">
+                    <h3 style="color: var(--primary); margin: 0; font-size: 1.35em; font-family: 'Playfair Display', serif;"><i class="fas fa-shapes"></i> Simulación Paso a Paso: Análisis Geométrico de Áreas y Volumen</h3>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px; margin-bottom: 0;">Aprende cómo se descompone la geometría del rotor para calcular la cámara de bombeo.</p>
+                </div>
+                
+                <!-- SVG Canvas Container -->
+                <div style="position: relative; width: 100%; max-width: 600px; height: 360px; background: #fafbfe; border: 2px solid #cbd5e0; border-radius: 12px; overflow: hidden; display: flex; justify-content: center; align-items: center; box-shadow: inset 0 2px 8px rgba(0,0,0,0.03);">
+                    <svg id="mathSvg" width="600" height="360" viewBox="0 0 600 360" style="width: 100%; height: 100%;">
+                        <!-- Definitions for Grid Pattern -->
+                        <defs>
+                            <pattern id="mathGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e6ebf5" stroke-width="1" />
+                            </pattern>
+                        </defs>
+                        <rect width="600" height="360" fill="url(#mathGrid)" />
+                        
+                        <!-- Step 1: Base Equilateral Triangle -->
+                        <polygon id="math-tri" points="300,100 220,240 380,240" fill="rgba(246, 173, 85, 0.1)" stroke="#f6ad55" stroke-width="2.5" style="opacity: 0; transition: opacity 0.5s;" />
+                        
+                        <!-- Step 2: Arcs & Sectors -->
+                        <path id="math-arc1" d="M 220 240 A 160 160 0 0,1 380 240" fill="none" stroke="#3182ce" stroke-width="2" stroke-dasharray="5,5" style="opacity: 0; transition: opacity 0.5s;" />
+                        <path id="math-arc2" d="M 380 240 A 160 160 0 0,1 300 100" fill="none" stroke="#3182ce" stroke-width="2" stroke-dasharray="5,5" style="opacity: 0; transition: opacity 0.5s;" />
+                        <path id="math-arc3" d="M 300 100 A 160 160 0 0,1 220 240" fill="none" stroke="#3182ce" stroke-width="2" stroke-dasharray="5,5" style="opacity: 0; transition: opacity 0.5s;" />
+                        
+                        <!-- Step 3: Reuleaux Triangle Solid -->
+                        <path id="math-reu" d="M 220 240 A 160 160 0 0,1 380 240 A 160 160 0 0,1 300 100 A 160 160 0 0,1 220 240 Z" fill="rgba(49, 130, 206, 0.2)" stroke="#2b6cb0" stroke-width="3" style="opacity: 0; transition: opacity 0.5s;" />
+                        
+                        <!-- Step 4: Circumscribed Circle -->
+                        <circle id="math-circle" cx="300" cy="193.33" r="92.38" fill="none" stroke="#48bb78" stroke-width="2" style="opacity: 0; transition: opacity 0.5s;" />
+                        
+                        <!-- Step 5: Area Differential Shading -->
+                        <path id="math-diff" d="M 300 100.95 A 92.38 92.38 0 1,1 299.9 100.95 Z M 220 240 A 160 160 0 0,1 380 240 A 160 160 0 0,1 300 100 A 160 160 0 0,1 220 240 Z" fill-rule="evenodd" fill="rgba(229, 62, 62, 0.25)" stroke="none" style="opacity: 0; transition: opacity 0.5s;" />
+                        
+                        <!-- Step 6: 3D Isometric Extrusion representing Volume -->
+                        <g id="math-extrusion" style="opacity: 0; transition: opacity 0.5s;">
+                            <path d="M 240 280 A 120 120 0 0,1 360 280 A 120 120 0 0,1 300 176.08 A 120 120 0 0,1 240 280 Z" fill="rgba(49, 130, 206, 0.1)" stroke="#a0aec0" stroke-width="1" />
+                            <line x1="240" y1="280" x2="240" y2="180" stroke="#718096" stroke-width="1" stroke-dasharray="3,3" />
+                            <line x1="360" y1="280" x2="360" y2="180" stroke="#718096" stroke-width="1" stroke-dasharray="3,3" />
+                            <line x1="300" y1="176.08" x2="300" y2="76.08" stroke="#718096" stroke-width="1" stroke-dasharray="3,3" />
+                            <path d="M 240 180 A 120 120 0 0,1 360 180 A 120 120 0 0,1 300 76.08 A 120 120 0 0,1 240 180 Z" fill="rgba(49, 130, 206, 0.3)" stroke="#2b6cb0" stroke-width="2" />
+                            <line x1="390" y1="280" x2="390" y2="180" stroke="#e53e3e" stroke-width="1.5" />
+                            <line x1="385" y1="280" x2="395" y2="280" stroke="#e53e3e" stroke-width="1.5" />
+                            <line x1="385" y1="180" x2="395" y2="180" stroke="#e53e3e" stroke-width="1.5" />
+                            <text x="402" y="235" font-family="'Poppins', sans-serif" font-weight="700" font-size="13" fill="#e53e3e">Longitud L</text>
+                        </g>
+                        
+                        <!-- Labels -->
+                        <circle id="math-centroid" cx="300" cy="193.33" r="4" fill="#2d3748" style="opacity: 0; transition: opacity 0.5s;" />
+                        <text id="math-centroid-txt" x="308" y="198" font-family="'Poppins', sans-serif" font-size="12" fill="#2d3748" style="opacity: 0; transition: opacity 0.5s;">Centroide</text>
+                        
+                        <g id="math-labels" style="opacity: 0; transition: opacity 0.5s;">
+                            <text x="210" y="255" font-family="'Poppins', sans-serif" font-weight="bold" font-size="13" fill="#2b6cb0">B</text>
+                            <text x="382" y="255" font-family="'Poppins', sans-serif" font-weight="bold" font-size="13" fill="#2b6cb0">C</text>
+                            <text x="295" y="90" font-family="'Poppins', sans-serif" font-weight="bold" font-size="13" fill="#2b6cb0">A</text>
+                        </g>
+                    </svg>
+                </div>
+                
+                <!-- Controls and Information -->
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; background: #f7fafc; border-radius: 12px; padding: 20px; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="math-step-badge" style="background: var(--accent); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9em; box-shadow: 0 2px 6px rgba(49, 130, 206, 0.3);">0</span>
+                            <span style="font-weight: 600; color: var(--dark); font-size: 0.95em;">Descomposición Métrica</span>
+                        </div>
+                        
+                        <!-- Controls Bar -->
+                        <div style="display: flex; gap: 8px;">
+                            <button class="anim-btn" id="math-sound-btn" onclick="toggleMathSound()" style="background: white; border: 1px solid #cbd5e0; color: var(--primary); padding: 8px 12px; border-radius: 6px; cursor: pointer;" title="Narración por Voz"><i class="fas fa-volume-up"></i></button>
+                            <button class="anim-btn" onclick="mathPrev()" style="background: white; border: 1px solid #cbd5e0; color: var(--primary); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;"><i class="fas fa-chevron-left"></i> Ant</button>
+                            <button class="anim-btn" id="math-play" onclick="toggleMathPlay()" style="background: var(--accent); border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 3px 8px rgba(49, 130, 206, 0.25);"><i class="fas fa-play"></i> Reproducir</button>
+                            <button class="anim-btn" onclick="mathNext()" style="background: white; border: 1px solid #cbd5e0; color: var(--primary); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">Sig <i class="fas fa-chevron-right"></i></button>
+                            <button class="anim-btn" onclick="resetMathAnimation()" style="background: white; border: 1px solid #cbd5e0; color: #e53e3e; padding: 8px 12px; border-radius: 6px; cursor: pointer;" title="Reset"><i class="fas fa-undo"></i></button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; position: relative;">
+                        <div id="math-progress-bar" style="position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: var(--accent); transition: width 0.3s;"></div>
+                    </div>
+                    
+                    <!-- Step Description Box -->
+                    <div style="background: white; border-radius: 8px; border-left: 4px solid var(--accent); padding: 15px; min-height: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                        <p id="math-step-desc" style="margin: 0; font-size: 0.95em; color: #4a5568; line-height: 1.6;">Cargando presentación...</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="dark-formula-box">
+                <h4><i class="fas fa-calculator"></i> Parámetros de Diseño a Analizar</h4>
+                <p style="font-size: 1.1em; margin: 15px 0;">
+                    Sea <strong>w</strong> = ancho constante del polígono de Reuleaux<br>
+                    (distancia entre rectas paralelas tangentes en cualquier dirección)
+                </p>
+                <p style="margin-top: 15px;">
+                    El prototipo debe permitir variar <strong>w</strong> interactivamente y observar 
+                    cómo cambian todas las propiedades métricas en tiempo real
+                </p>
+            </div>
+
+            
+            <!-- Visor 3D de la Instalación en Pozo Petrolero (Genially-style widget) -->
+            <div class="interactive-genially-card" style="background: white; border: 2px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 25px; margin: 35px 0; width: 100%; box-sizing: border-box;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h3 style="color: var(--primary); margin: 0; font-size: 1.35em; font-family: 'Playfair Display', serif;"><i class="fas fa-oil-well"></i> Visor 3D: Instalación del Sistema BPC en Pozo Petrolero</h3>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px; margin-bottom: 0;">Explora de forma táctil el pozo de extracción y los componentes clave del sistema en el subsuelo.</p>
+                </div>
+                
+                <!-- 3D Canvas and Interactive Hotspots -->
+                <div style="position: relative; width: 100%; height: 480px; background: #1a202c; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <!-- 3D Canvas element -->
+                    <div id="well3dCanvas" style="width: 100%; height: 100%;"></div>
+                    
+                    <!-- Hotspots Overlay (Absolute Positioned CSS Dots style Genially) -->
+                    <!-- Hotspot 1: driveHead (Surface) -->
+                    <div style="position: absolute; top: 12%; left: 51%; transform: translate(-50%, -50%);">
+                        <button class="hotspot-btn" onclick="triggerWellHotspot('driveHead')">
+                            1
+                            <span class="hotspot-ripple"></span>
+                        </button>
+                    </div>
+                    <!-- Hotspot 2: suckerRods (Tubing upper) -->
+                    <div style="position: absolute; top: 35%; left: 47%; transform: translate(-50%, -50%);">
+                        <button class="hotspot-btn" onclick="triggerWellHotspot('suckerRods')">
+                            2
+                            <span class="hotspot-ripple"></span>
+                        </button>
+                    </div>
+                    <!-- Hotspot 3: productionTubing (Tubing middle) -->
+                    <div style="position: absolute; top: 55%; left: 53%; transform: translate(-50%, -50%);">
+                        <button class="hotspot-btn" onclick="triggerWellHotspot('tubing')">
+                            3
+                            <span class="hotspot-ripple"></span>
+                        </button>
+                    </div>
+                    <!-- Hotspot 4: Subsurface Pump BPC -->
+                    <div style="position: absolute; top: 78%; left: 49%; transform: translate(-50%, -50%);">
+                        <button class="hotspot-btn" onclick="triggerWellHotspot('subPump')">
+                            4
+                            <span class="hotspot-ripple"></span>
+                        </button>
+                    </div>
+                    <!-- Hotspot 5: Reservoir -->
+                    <div style="position: absolute; top: 90%; left: 62%; transform: translate(-50%, -50%);">
+                        <button class="hotspot-btn" onclick="triggerWellHotspot('reservoir')">
+                            5
+                            <span class="hotspot-ripple"></span>
+                        </button>
+                    </div>
+                    
+                    <!-- Overlay HUD Panel -->
+                    <div id="well-info-overlay" style="position: absolute; bottom: 20px; left: 20px; right: 20px; background: rgba(26, 32, 44, 0.92); border-left: 4px solid var(--highlight); border-radius: 8px; padding: 15px; color: white; display: flex; flex-direction: column; gap: 8px; opacity: 0; pointer-events: none; transition: opacity 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 10;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 id="well-overlay-title" style="color: var(--highlight); margin: 0; font-size: 1.05em; display: flex; align-items: center; gap: 8px;">Componente</h4>
+                            <button onclick="closeWellOverlay()" style="background: transparent; border: none; color: #a0aec0; cursor: pointer; font-size: 1em;"><i class="fas fa-times"></i></button>
+                        </div>
+                        <p id="well-overlay-desc" style="margin: 0; font-size: 0.88em; line-height: 1.5; color: #e2e8f0;">Detalle...</p>
+                    </div>
+                    
+                    <!-- 3D Navigation Guide tag -->
+                    <div style="position: absolute; bottom: 20px; right: 20px; background: rgba(0, 0, 0, 0.6); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.78em; pointer-events: none; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-arrows-alt-h"></i> Arrastra para rotar pozo en 3D
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="content-card" style="margin-top: 40px;">
+                <h3><i class="fas fa-question-circle"></i> Preguntas de Diseño a Resolver</h3>
+                
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; border-left: 4px solid var(--accent);">
+                    <h4 style="color: var(--primary); margin-bottom: 15px;">
+                        <span style="background: var(--accent); color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;">1</span>
+                        Diferencia Métrica de Área
+                    </h4>
+                    <p>
+                        Demostrar matemáticamente (mediante descomposición en figuras elementales) 
+                        la diferencia exacta de área entre el triángulo de Reuleaux y el círculo 
+                        circunscrito:
+                    </p>
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; font-family: 'Courier New', monospace;">
+                        ΔA = A<sub>círculo</sub> - A<sub>Reuleaux</sub> = ?
+                    </div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; border-left: 4px solid var(--accent);">
+                    <h4 style="color: var(--primary); margin-bottom: 15px;">
+                        <span style="background: var(--accent); color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;">2</span>
+                        Impacto en Volumen de Bombeo
+                    </h4>
+                    <p>
+                        Determinar cómo ΔA afecta el volumen de la cámara de bombeo por cada 
+                        revolución, considerando la longitud del rotor <strong>L</strong> y el 
+                        número de cavidades formadas.
+                    </p>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; border-left: 4px solid var(--accent);">
+                    <h4 style="color: var(--primary); margin-bottom: 15px;">
+                        <span style="background: var(--accent); color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px;">3</span>
+                        Optimización del Diseño
+                    </h4>
+                    <p>
+                        Establecer criterios geométricos para maximizar el caudal y minimizar 
+                        la fricción, basándose en la relación entre w, L y el área diferencial ΔA.
+                    </p>
+                </div>
+            </div>
+
+            <div class="video-info">
+                <i class="fas fa-video"></i>
+                <h3 style="margin-bottom: 15px;">Video Explicativo Requerido</h3>
+                <p style="font-size: 1.1em; max-width: 700px; margin: 0 auto;">
+                    Duración: <strong>3 minutos exactos</strong><br>
+                    Debe mostrar la construcción en GeoGebra, la interactividad del prototipo, 
+                    y explicar la aplicación en bombas de crudo pesado
+                </p>
+            </div>
+        </div>
+    </section>
+    </div>
+    
+    <!-- FOOTER ÚNICO UNIFICADO -->
+    <footer>
+        <div class="container">
+            <p><strong>Tema 2: Rotores de Reuleaux - Aplicación de Ingeniería & GeoGebra</strong></p>
+            <p>Prototipo Digital del Rotor de Reuleaux para Bombas de Cavidad Progresiva (PCP)</p>
+            <p style="margin-top: 15px; font-size: 0.9em;">
+                <i class="fas fa-graduation-cap"></i> Material Educativo Integrado · Ingeniería en Petróleos / Mecánica
+            </p>
+        </div>
+    </footer>
+
+    
+    <script>
+        
+        // ==========================================================================
+        // 1. SIMULADOR DE DESCOMPOSICIÓN GEOMÉTRICA (SVG + JS)
+        // ==========================================================================
+        let mathStep = 0;
+        let isMathPlaying = false;
+        let mathPlayInterval = null;
+        let isMathAudioEnabled = true;
+
+        const mathStepsInfo = [
+            {
+                badge: "0",
+                desc: "Inicio: Pulsa 'Siguiente' para iniciar el análisis matemático paso a paso del área del rotor de Reuleaux, del círculo circunscrito y de la cámara de bombeo.",
+                speak: "Bienvenido al análisis geométrico del rotor. Presiona siguiente para iniciar."
+            },
+            {
+                badge: "1",
+                desc: "Paso 1: Triángulo Equilátero Base. Se define por los vértices A, B y C con un ancho constante w. Su área es: A_tri = (raiz de 3 / 4) * w^2.",
+                speak: "Paso 1. Definimos el triángulo equilátero base de ancho w. Su área es raíz de tres sobre cuatro por w al cuadrado."
+            },
+            {
+                badge: "2",
+                desc: "Paso 2: Sectores Circulares. Sobre cada lado del triángulo se añade un sector circular de 60 grados y radio w, centrados en los vértices opuestos.",
+                speak: "Paso 2. Sobre cada lado agregamos un sector circular de sesenta grados de apertura y radio igual al ancho w."
+            },
+            {
+                badge: "3",
+                desc: "Paso 3: Triángulo de Reuleaux. Es la intersección de los tres arcos de círculo. Su área total se obtiene sumando los tres sectores y restando dos veces el triángulo equilátero base: A_reu = 0.5 * (pi - raiz de 3) * w^2.",
+                speak: "Paso 3. Al unir los tres sectores y restar dos veces el triángulo de base, se forma el triángulo de Reuleaux."
+            },
+            {
+                badge: "4",
+                desc: "Paso 4: Círculo Circunscrito. Delinea el contorno cilíndrico del estator, centrado en el baricentro del rotor con radio R = w / raiz de 3. Su área es: A_cir = (pi / 3) * w^2.",
+                speak: "Paso 4. Trazamos el círculo circunscrito concéntrico que define la envolvente exterior del canal del estator."
+            },
+            {
+                badge: "5",
+                desc: "Paso 5: Diferencial de Área (Delta A). Representa la cámara vacía por donde se desplaza el fluido. Delta A = A_cir - A_reu = (raiz de 3 / 2 - pi / 6) * w^2 ≈ 0.325 * w^2.",
+                speak: "Paso 5. El área diferencial delta A, sombreada en rojo, representa la cavidad libre que transportará el fluido viscoso."
+            },
+            {
+                badge: "6",
+                desc: "Paso 6: Volumen de la Cámara (V_rev). Al extruir el área diferencial a lo largo de la longitud L del rotor de la bomba, se calcula el volumen teórico por revolución: V_rev = Delta A * L.",
+                speak: "Paso 6. Finalmente, multiplicando el área diferencial delta A por la longitud L de la bomba, obtenemos el volumen de bombeo por revolución."
+            }
+        ];
+
+        function toggleMathSound() {
+            isMathAudioEnabled = !isMathAudioEnabled;
+            const btn = document.getElementById('math-sound-btn');
+            if (isMathAudioEnabled) {
+                btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                btn.style.color = 'var(--primary)';
+                speakMathText(mathStepsInfo[mathStep].speak);
+            } else {
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                btn.style.color = '#e53e3e';
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        }
+
+        function speakMathText(text) {
+            if (!isMathAudioEnabled) return;
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES';
+                utterance.rate = 1.05;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function updateMathStepUI() {
+            document.getElementById('math-step-badge').textContent = mathStepsInfo[mathStep].badge;
+            document.getElementById('math-step-desc').textContent = mathStepsInfo[mathStep].desc;
+            document.getElementById('math-progress-bar').style.width = `${(mathStep / 6) * 100}%`;
+            
+            drawMathState(mathStep);
+            speakMathText(mathStepsInfo[mathStep].speak);
+        }
+
+        function drawMathState(step) {
+            const tri = document.getElementById('math-tri');
+            const arc1 = document.getElementById('math-arc1');
+            const arc2 = document.getElementById('math-arc2');
+            const arc3 = document.getElementById('math-arc3');
+            const reu = document.getElementById('math-reu');
+            const cir = document.getElementById('math-circle');
+            const diff = document.getElementById('math-diff');
+            const ext = document.getElementById('math-extrusion');
+            const cen = document.getElementById('math-centroid');
+            const cenTxt = document.getElementById('math-centroid-txt');
+            const labels = document.getElementById('math-labels');
+            
+            if (tri) tri.style.opacity = (step === 1) ? 1 : (step === 2 ? 0.35 : 0);
+            if (arc1) {
+                arc1.style.opacity = (step === 2) ? 1 : 0;
+                arc2.style.opacity = (step === 2) ? 1 : 0;
+                arc3.style.opacity = (step === 2) ? 1 : 0;
+            }
+            if (reu) reu.style.opacity = (step === 3) ? 1 : (step === 4 ? 0.4 : (step === 5 ? 0.25 : 0));
+            if (cir) cir.style.opacity = (step === 4) ? 1 : (step === 5 ? 0.25 : 0);
+            if (cen) {
+                cen.style.opacity = (step === 4) ? 1 : 0;
+                cenTxt.style.opacity = (step === 4) ? 1 : 0;
+            }
+            if (diff) diff.style.opacity = (step === 5) ? 1 : 0;
+            if (ext) ext.style.opacity = (step === 6) ? 1 : 0;
+            if (labels) labels.style.opacity = (step > 0 && step < 5) ? 1 : 0;
+        }
+
+        function mathNext() {
+            stopMathPlay();
+            if (mathStep < 6) {
+                mathStep++;
+                updateMathStepUI();
+            }
+        }
+
+        function mathPrev() {
+            stopMathPlay();
+            if (mathStep > 0) {
+                mathStep--;
+                updateMathStepUI();
+            }
+        }
+
+        function toggleMathPlay() {
+            if (isMathPlaying) {
+                stopMathPlay();
+            } else {
+                startMathPlay();
+            }
+        }
+
+        function startMathPlay() {
+            isMathPlaying = true;
+            document.getElementById('math-play').innerHTML = '<i class="fas fa-pause"></i> Pausar';
+            
+            function play() {
+                if (!isMathPlaying) return;
+                if (mathStep < 6) {
+                    mathStep++;
+                    updateMathStepUI();
+                    mathPlayInterval = setTimeout(play, 4000);
+                } else {
+                    stopMathPlay();
+                    resetMathAnimation();
+                }
+            }
+            play();
+        }
+
+        function stopMathPlay() {
+            isMathPlaying = false;
+            document.getElementById('math-play').innerHTML = '<i class="fas fa-play"></i> Reproducir';
+            if (mathPlayInterval) clearTimeout(mathPlayInterval);
+        }
+
+        function resetMathAnimation() {
+            stopMathPlay();
+            mathStep = 0;
+            updateMathStepUI();
+        }
+
+
+        // ==========================================================================
+        // 2. VISOR 3D DE INSTALACIÓN EN POZO (THREE.JS)
+        // ==========================================================================
+        let wellScene, wellCamera, wellRenderer, wellControls;
+        let suckerRodMesh, subsystemPumpMesh;
+        let wellAnimationFrame;
+        let wellTime = 0;
+
+        function initWell3D() {
+            const container = document.getElementById('well3dCanvas');
+            if (!container) return;
+            
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            wellScene = new THREE.Scene();
+            wellScene.background = new THREE.Color(0x1a202c);
+            
+            wellCamera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+            wellCamera.position.set(0, 3, 14);
+            
+            wellRenderer = new THREE.WebGLRenderer({ antialias: true });
+            wellRenderer.setSize(width, height);
+            wellRenderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(wellRenderer.domElement);
+            
+            wellControls = new THREE.OrbitControls(wellCamera, wellRenderer.domElement);
+            wellControls.enableDamping = true;
+            wellControls.dampingFactor = 0.05;
+            wellControls.minDistance = 4;
+            wellControls.maxDistance = 25;
+            wellControls.target.set(0, -1, 0);
+            
+            // Iluminación
+            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+            wellScene.add(ambient);
+            
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.95);
+            dirLight1.position.set(6, 12, 10);
+            wellScene.add(dirLight1);
+            
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.35);
+            dirLight2.position.set(-6, -6, -6);
+            wellScene.add(dirLight2);
+            
+            // 1. Yacimiento (Cilindro oscuro en la base)
+            const resGeo = new THREE.CylinderGeometry(4.0, 4.0, 2.0, 32);
+            const resMat = new THREE.MeshStandardMaterial({ color: 0x242b35, roughness: 0.8, metalness: 0.1 });
+            const reservoir = new THREE.Mesh(resGeo, resMat);
+            reservoir.position.y = -6.5;
+            wellScene.add(reservoir);
+            
+            // 2. Casing (Wellbore coating) - Corte longitudinal de 180°
+            const casingGeo = new THREE.CylinderGeometry(1.3, 1.3, 10.0, 32, 1, true, 0, Math.PI);
+            const casingMat = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.6, metalness: 0.7, side: THREE.DoubleSide });
+            const casing = new THREE.Mesh(casingGeo, casingMat);
+            casing.position.y = -1.0;
+            casing.rotation.y = Math.PI / 4; // Rotar para ver corte lateral
+            wellScene.add(casing);
+            
+            // 3. Tubería de Producción (Production Tubing) - Corte longitudinal
+            const tubingGeo = new THREE.CylinderGeometry(0.65, 0.65, 10.5, 32, 1, true, 0, Math.PI * 1.15);
+            const tubingMat = new THREE.MeshStandardMaterial({ color: 0x2b6cb0, roughness: 0.4, metalness: 0.5, side: THREE.DoubleSide });
+            const tubing = new THREE.Mesh(tubingGeo, tubingMat);
+            tubing.position.y = -0.75;
+            tubing.rotation.y = Math.PI / 4;
+            wellScene.add(tubing);
+            
+            // 4. Cabezal de Superficie (Drive Head y Flanges y = 4.5)
+            const flangeGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.35, 32);
+            const metalMat = new THREE.MeshStandardMaterial({ color: 0x718096, metalness: 0.85, roughness: 0.25 });
+            const baseFlange = new THREE.Mesh(flangeGeo, metalMat);
+            baseFlange.position.y = 4.2;
+            wellScene.add(baseFlange);
+            
+            const motorGeo = new THREE.BoxGeometry(1.3, 0.9, 0.9);
+            const motorMat = new THREE.MeshStandardMaterial({ color: 0xdd6b20, roughness: 0.6 });
+            const motor = new THREE.Mesh(motorGeo, motorMat);
+            motor.position.set(0, 4.8, 0);
+            wellScene.add(motor);
+            
+            // 5. Varillas de Succión (Sucker Rods)
+            const rodGeo = new THREE.CylinderGeometry(0.07, 0.07, 10.5, 12);
+            const rodMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.15 });
+            suckerRodMesh = new THREE.Mesh(rodGeo, rodMat);
+            suckerRodMesh.position.y = -0.75;
+            wellScene.add(suckerRodMesh);
+            
+            // 6. Bomba BPC (Fondo)
+            // Estator externo
+            const pStatorGeo = new THREE.CylinderGeometry(0.62, 0.62, 1.8, 32, 1, true, 0, Math.PI * 1.2);
+            const pStatorMat = new THREE.MeshStandardMaterial({ color: 0x319795, roughness: 0.25, metalness: 0.3, side: THREE.DoubleSide });
+            const pumpStator = new THREE.Mesh(pStatorGeo, pStatorMat);
+            pumpStator.position.y = -4.8;
+            pumpStator.rotation.y = Math.PI / 4;
+            wellScene.add(pumpStator);
+            
+            // Rotor Helicoidal de Reuleaux
+            const rShape = createIndexReuleauxShape(0.25);
+            const rExtSettings = { depth: 1.6, bevelEnabled: false, steps: 30 };
+            const rGeo = new THREE.ExtrudeGeometry(rShape, rExtSettings);
+            rGeo.center();
+            twistIndexGeometry(rGeo, 1.8);
+            const rMat = new THREE.MeshPhongMaterial({ color: 0x3182ce, shininess: 85 });
+            subsystemPumpMesh = new THREE.Mesh(rGeo, rMat);
+            subsystemPumpMesh.position.y = -4.8;
+            wellScene.add(subsystemPumpMesh);
+            
+            animateWell3D();
+            window.addEventListener('resize', onWellWindowResize);
+        }
+
+        function createIndexReuleauxShape(w) {
+            const shape = new THREE.Shape();
+            const radius = w;
+            const h = w * Math.sqrt(3) / 2;
+            
+            const ay = (2/3) * h;
+            const by = -(1/3) * h;
+            const bx = -w/2;
+            const cy = -(1/3) * h;
+            const cx = w/2;
+            
+            const angleAB = Math.atan2(by - ay, bx);
+            const angleAC = Math.atan2(cy - ay, cx);
+            
+            shape.moveTo(bx, by);
+            
+            const segments = 16;
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments;
+                const angle = angleAB * (1 - t) + angleAC * t;
+                const x = 0 + radius * Math.cos(angle);
+                const y = ay + radius * Math.sin(angle);
+                shape.lineTo(x, y);
+            }
+            
+            const angleBC = Math.atan2(cy - by, cx - bx);
+            const angleBA = Math.atan2(ay - by, -bx);
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments;
+                const angle = angleBC * (1 - t) + angleBA * t;
+                const x = bx + radius * Math.cos(angle);
+                const y = by + radius * Math.sin(angle);
+                shape.lineTo(x, y);
+            }
+            
+            const angleCA = Math.atan2(ay - cy, -cx);
+            const angleCB = Math.atan2(by - cy, bx - cx);
+            for (let i = 1; i <= segments; i++) {
+                const t = i / segments;
+                const angle = angleCA * (1 - t) + angleCB * t;
+                const x = cx + radius * Math.cos(angle);
+                const y = cy + radius * Math.sin(angle);
+                shape.lineTo(x, y);
+            }
+            
+            return shape;
+        }
+
+        function twistIndexGeometry(geometry, twistFactor) {
+            const position = geometry.attributes.position;
+            for (let i = 0; i < position.count; i++) {
+                const x = position.getX(i);
+                const y = position.getY(i);
+                const z = position.getZ(i);
+                
+                const angle = z * twistFactor;
+                const newX = x * Math.cos(angle) - y * Math.sin(angle);
+                const newY = x * Math.sin(angle) + y * Math.cos(angle);
+                
+                position.setX(i, newX);
+                position.setY(i, newY);
+            }
+            geometry.computeVertexNormals();
+        }
+
+        function animateWell3D() {
+            wellAnimationFrame = requestAnimationFrame(animateWell3D);
+            wellTime += 0.04;
+            
+            if (suckerRodMesh) {
+                suckerRodMesh.rotation.y = wellTime;
+            }
+            if (subsystemPumpMesh) {
+                const ecc = 0.08;
+                subsystemPumpMesh.position.x = ecc * Math.cos(wellTime * 2);
+                subsystemPumpMesh.position.z = ecc * Math.sin(wellTime * 2);
+                subsystemPumpMesh.rotation.z = -wellTime * 2;
+            }
+            
+            if (wellControls) wellControls.update();
+            if (wellRenderer && wellScene && wellCamera) {
+                wellRenderer.render(wellScene, wellCamera);
+            }
+        }
+
+        function onWellWindowResize() {
+            const container = document.getElementById('well3dCanvas');
+            if (!container) return;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            wellCamera.aspect = width / height;
+            wellCamera.updateProjectionMatrix();
+            wellRenderer.setSize(width, height);
+        }
+
+        const wellHotspotsInfo = {
+            driveHead: {
+                title: "Drive Head (Cabezal de Superficie)",
+                desc: "Es el motor eléctrico e industrial que se coloca en la superficie. Proporciona la rotación y el torque necesarios para hacer girar la sarta de varillas de succión a cientos de metros de profundidad.",
+                speak: "Drive Head. Cabezal de Superficie. Es el motor eléctrico en la superficie que proporciona la rotación y el torque necesarios."
+            },
+            suckerRods: {
+                title: "Sucker Rods (Sarta de Varillas)",
+                desc: "Varillas de acero de alta resistencia que se conectan en serie desde la superficie hasta el fondo del pozo. Transmiten la rotación mecánica del motor directamente al rotor de Reuleaux.",
+                speak: "Sucker Rods o Sarta de Varillas. Conectan el motor en superficie con la bomba en el fondo del pozo para transmitir la rotación."
+            },
+            tubing: {
+                title: "Production Tubing (Tubería de Producción)",
+                desc: "Tubería interna de acero por la cual fluye el petróleo extraído. El rotor de la bomba empuja el crudo viscoso de forma ascendente a través de este conducto hasta la superficie.",
+                speak: "Production Tubing o Tubería de Producción. Es la tubería interna por la cual asciende el petróleo pesado hasta los tanques de recolección."
+            },
+            subPump: {
+                title: "Bomba BPC (Rotor y Estator en Fondo)",
+                desc: "Ubicada en el extremo inferior de la tubería. Consiste en un rotor de Reuleaux helicoidal que gira de forma excéntrica dentro de un estator de elastómero de doble cavidad. Genera el empuje axial constante para vencer la viscosidad del crudo.",
+                speak: "Bomba de cavidad progresiva en fondo de pozo. Su rotor helicoidal de Reuleaux gira excéntricamente dentro del estator para empujar el crudo pesado."
+            },
+            reservoir: {
+                title: "Yacimiento de Crudo Pesado",
+                desc: "Formación de arena o roca saturada con crudo de baja gravedad API (alta viscosidad). El crudo fluye a través de los agujeros del revestimiento del pozo (casing) hacia la succión de la bomba BPC.",
+                speak: "Yacimiento de Crudo Pesado. Formación saturada de crudo viscoso de baja gravedad API que fluye hacia el fondo del pozo."
+            }
+        };
+
+        let isWellAudioEnabled = true;
+
+        function triggerWellHotspot(id) {
+            const info = wellHotspotsInfo[id];
+            if (!info) return;
+            
+            document.getElementById('well-overlay-title').innerHTML = `<i class="fas fa-info-circle"></i> ${info.title}`;
+            document.getElementById('well-overlay-desc').textContent = info.desc;
+            
+            const overlay = document.getElementById('well-info-overlay');
+            overlay.style.opacity = 1;
+            overlay.style.pointerEvents = 'auto';
+            
+            speakWellText(info.speak);
+        }
+
+        function closeWellOverlay() {
+            const overlay = document.getElementById('well-info-overlay');
+            overlay.style.opacity = 0;
+            overlay.style.pointerEvents = 'none';
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function speakWellText(text) {
+            if (!isWellAudioEnabled) return;
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES';
+                utterance.rate = 1.05;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // ==========================================================================
+        // 3. INICIALIZADOR GENERAL DE DOM
+        // ==========================================================================
+        function renderMath() {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            } else {
+                setTimeout(renderMath, 50);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', renderMath);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('mathSvg')) {
+                resetMathAnimation();
+            }
+            if (document.getElementById('well3dCanvas')) {
+                initWell3D();
+            }
+        });
+
+    </script>
+</body>
+</html>
