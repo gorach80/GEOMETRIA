@@ -1,0 +1,3891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOLAR-MESH 2D: Optimizador Geométrico de Teselación Solar</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX for formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  
+  <!-- Three.js for 3D Viewport -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-main: #060b16;
+      --bg-card: rgba(13, 22, 43, 0.7);
+      --border-glass: rgba(0, 200, 255, 0.15);
+      --primary-solar: #ffb703;
+      --secondary-neon: #02f3e6;
+      --accent-alert: #ff4d6d;
+      --text-main: #f8f9fa;
+      --text-muted: #94a3b8;
+      --accent-violet: #a855f7;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(2, 243, 230, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(255, 183, 3, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    .font-display { font-family: 'Orbitron', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Premium Glassmorphism */
+    .glass-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-input {
+      background: rgba(4, 8, 20, 0.85);
+      border: 1px solid var(--border-glass);
+      color: var(--text-main);
+    }
+    .glass-input:focus {
+      border-color: var(--secondary-neon);
+      outline: none;
+      box-shadow: 0 0 12px rgba(2, 243, 230, 0.35);
+    }
+
+    /* Tab styles */
+    .tab-btn {
+      position: relative;
+      overflow: hidden;
+    }
+    .tab-btn[aria-selected="true"] {
+      background: rgba(255, 183, 3, 0.12);
+      border-color: var(--primary-solar);
+      color: var(--primary-solar);
+      text-shadow: 0 0 10px rgba(255, 183, 3, 0.5);
+    }
+    .tab-btn[aria-selected="true"]::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 10%; width: 80%; height: 3px;
+      background: var(--primary-solar);
+      box-shadow: 0 0 8px var(--primary-solar);
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* Info button style */
+    .inf-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(2, 243, 230, 0.1);
+      border: 1px solid rgba(2, 243, 230, 0.3);
+      color: var(--secondary-neon);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: all 0.25s ease;
+      vertical-align: middle;
+    }
+    .inf-btn:hover {
+      background: var(--secondary-neon);
+      color: #000 !important;
+      box-shadow: 0 0 10px rgba(2, 243, 230, 0.6);
+      transform: scale(1.1);
+    }
+
+    /* Modal styles */
+    .info-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(2, 10, 24, 0.9);
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .info-modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .info-modal {
+      width: 90%;
+      max-width: 520px;
+      background: #081125;
+      border: 1px solid var(--border-glass);
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      padding: 26px;
+      transform: scale(0.92);
+      transition: transform 0.3s ease;
+    }
+    .info-modal-overlay.active .info-modal {
+      transform: scale(1);
+    }
+    .info-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 12px;
+    }
+    .info-modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1em;
+      color: var(--secondary-neon);
+      font-weight: 700;
+    }
+    .info-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .info-modal-close:hover {
+      color: var(--accent-alert);
+    }
+
+    /* Math Step Styles */
+    .math-step-card {
+      background: rgba(10, 18, 38, 0.8);
+      border-left: 4px solid var(--secondary-neon);
+      border-radius: 0 12px 12px 0;
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.03);
+      border-right: 1px solid rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    /* Flash window styling */
+    .flash-window {
+      background: #040914;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 20px rgba(0,255,200,0.05);
+    }
+    .flash-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--secondary-neon); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-slate-900">
+
+  <!-- TOP BAR HEADER -->
+  <header class="w-full max-w-7xl mx-auto px-4 pt-6 pb-2">
+    <div class="glass-panel rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+      <!-- Ambient light elements -->
+      <div class="absolute -right-20 -top-20 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-20 -bottom-20 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <span class="px-3 py-1 text-xs font-bold tracking-widest uppercase rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-display">Tema 5: Energía Solar</span>
+          <span class="text-xs text-slate-400 flex items-center gap-1 font-mono"><i class="fa-solid fa-location-dot text-cyan-400"></i> Costa Seca, Santa Elena</span>
+        </div>
+        <h1 class="text-3xl md:text-5xl font-black font-display tracking-tight text-white mb-2">
+          SOLAR-<span class="text-amber-400">MESH</span> 2D
+        </h1>
+        <p class="text-sm md:text-base text-slate-400 max-w-2xl font-light">
+          Optimizador Geométrico de Teselación Solar en Superficies Poligonales No Convexas. Modelado métrico de área útil y autotrabamiento de sombras.
+        </p>
+      </div>
+
+      <!-- Metric Stats Widget -->
+      <div class="grid grid-cols-2 gap-4 w-full md:w-auto min-w-[320px]">
+        <div class="glass-panel p-4 rounded-xl flex flex-col bg-slate-950/40">
+          <span class="text-xs text-slate-400 font-medium">Paneles Activos</span>
+          <span id="hero-panel-count" class="text-xl md:text-2xl font-black font-mono text-cyan-400">0</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl flex flex-col bg-slate-950/40">
+          <span class="text-xs text-slate-400 font-medium">Área Muerta</span>
+          <span id="hero-deadarea" class="text-xl md:text-2xl font-black font-mono text-rose-400">0.00 m²</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="w-full max-w-7xl mx-auto px-4 my-4" aria-label="Navegación del módulo">
+    <div class="glass-panel p-1.5 rounded-xl flex flex-wrap gap-1 md:gap-2">
+      <button role="tab" aria-selected="true" aria-controls="panel-contexto" class="tab-btn flex-1 py-3 px-4 rounded-lg text-sm font-semibold tracking-wide font-display transition-all duration-300 text-slate-400 hover:text-white border border-transparent" onclick="switchTab(this, 'panel-contexto')">
+        CONTEXTO
+      </button>
+      <button role="tab" aria-selected="false" aria-controls="panel-analitico" class="tab-btn flex-1 py-3 px-4 rounded-lg text-sm font-semibold tracking-wide font-display transition-all duration-300 text-slate-400 hover:text-white border border-transparent" onclick="switchTab(this, 'panel-analitico')">
+        SOLUCIONADOR
+      </button>
+      <button role="tab" aria-selected="false" aria-controls="panel-simulacion" class="tab-btn flex-1 py-3 px-4 rounded-lg text-sm font-semibold tracking-wide font-display transition-all duration-300 text-slate-400 hover:text-white border border-transparent" onclick="switchTab(this, 'panel-simulacion')">
+        LABORATORIO 2D/3D
+      </button>
+      <button role="tab" aria-selected="false" aria-controls="panel-sig" class="tab-btn flex-1 py-3 px-4 rounded-lg text-sm font-semibold tracking-wide font-display transition-all duration-300 text-slate-400 hover:text-white border border-transparent" onclick="switchTab(this, 'panel-sig')">
+        SIG & FLASH
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN TAB CONTENT CONTAINER -->
+  <main class="w-full max-w-7xl mx-auto px-4 flex-1 mb-8">
+    
+    <!-- TAB 1: CONTEXTO -->
+    <section id="panel-contexto" role="tabpanel" class="tab-content block space-y-6">
+      <div class="glass-panel p-6 md:p-8 rounded-2xl space-y-6">
+        
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <h2 class="text-xl md:text-2xl font-bold text-amber-400 font-display flex items-center gap-2">
+            <span>■</span> El Reto de la No Convexidad en Techos Residenciales
+          </h2>
+          <!-- Info Button -->
+          <button class="inf-btn" onclick="showInfoModal('contexto')" title="Objetivo Didáctico-Técnico">inf</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm md:text-base leading-relaxed text-slate-300">
+          <div class="space-y-4">
+            <p>
+              La provincia de **Santa Elena** goza de una radiación solar privilegiada durante todo el año. Sin embargo, las morfologías de las cubiertas urbanas imponen un severo reto geométrico: la gran mayoría de viviendas presenta techos en forma de **L**, configurando un **polígono no convexo de 6 lados (hexágono entrante)**.
+            </p>
+            <p>
+              La presencia de un vértice cóncavo (ángulo interno de $270^\circ$) interrumpe el mallado lineal tradicional de paneles. Instalar una rejilla ortogonal simple sin rotación genera desaprovechamiento de espacio crítico (Área Muerta) y colisiones con los límites físicos del techo.
+            </p>
+            <p>
+              Este proyecto demuestra cómo la optimización del ángulo de orientación y la distribución de módulos permite maximizar el coeficiente de ocupación, aumentando la potencia de generación instalada y reduciendo los costos de estructura.
+            </p>
+          </div>
+          <div class="space-y-4 bg-slate-950/50 p-6 rounded-xl border border-cyan-500/10">
+            <p class="text-xs font-bold text-cyan-400 uppercase tracking-widest font-display"><i class="fa-solid fa-bullseye"></i> Objetivos Técnicos y Muestras</p>
+            <ul class="list-disc pl-5 space-y-2 text-xs md:text-sm text-slate-400">
+              <li>Calcular analíticamente el área geométrica de superficies no convexas mediante segmentación ortogonal.</li>
+              <li>Determinar la pérdida espacial por holgura ($A_{\text{muerta}}$) en el vértice entrante en función del ángulo $\theta$.</li>
+              <li>Analizar la proyección de sombras mutuas de autotrabamiento de paneles según la altitud solar.</li>
+              <li>Suministrar una herramienta interactiva para exportar planos y datos en formato GeoJSON aplicables a SIG.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- SHARK TANK PITCH AUDIO CONTROLLER -->
+        <div class="p-6 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 text-lg"><i class="fa-solid fa-microphone"></i></span>
+              <div>
+                <h4 class="font-bold text-white font-display text-sm md:text-base">🎙️ Pitch Shark Tank (10 Min) — Defensa del Proyecto</h4>
+                <p class="text-2xs text-slate-400 font-mono">Presentación oral estructurada para inversores académicos</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="speakPitch()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold font-display rounded-lg transition flex items-center gap-1.5"><i class="fa-solid fa-play"></i> Escuchar Pitch</button>
+              <button onclick="pauseSpeech()" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-lg transition" title="Pausar"><i class="fa-solid fa-pause"></i></button>
+              <button onclick="stopSpeech()" class="px-3 py-2 bg-rose-950/50 hover:bg-rose-900/50 text-rose-400 text-xs font-semibold rounded-lg transition" title="Detener"><i class="fa-solid fa-stop"></i></button>
+              <button onclick="toggleScript()" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-lg transition" id="scriptBtn">Ver Guión</button>
+            </div>
+          </div>
+
+          <!-- Highlight progress marker -->
+          <div id="speechProgress" class="h-1 bg-slate-800 rounded overflow-hidden">
+            <div id="speechProgressBar" class="h-full bg-amber-400 w-0 transition-all duration-300"></div>
+          </div>
+
+          <!-- Hidden pitch transcript -->
+          <div id="pitchScript" class="hidden overflow-hidden transition-all duration-300 text-xs leading-relaxed text-slate-400 bg-slate-950/60 p-4 rounded-lg border border-white/5 space-y-3 max-h-[300px] overflow-y-auto">
+            <p id="seg1"><strong class="text-amber-400">[0:00 - 1:30] Presentación e Idea:</strong> Estimados inversores, les presento SOLAR-MESH 2D. En la costa de Santa Elena, miles de techos tienen formas de L no convexas que desperdician hasta un 25% del espacio útil para instalar paneles debido a la rigidez de las instalaciones convencionales de 0 grados. Nuestra solución optimiza el ángulo geométrico exacto de teselación solar.</p>
+            <p id="seg2"><strong class="text-amber-400">[1:30 - 3:30] La Problemática Matemática:</strong> Un hexágono no convexo con un vértice de 270 grados perturba las mallas ortogonales. Si instalamos los paneles de forma tradicional, generamos un área muerta teórica en la esquina equivalente a $L^2 / \sin(2\theta)$. Con nuestro modelo analítico euclidiano, calculamos la diagonal y la rotación exacta.</p>
+            <p id="seg3"><strong class="text-amber-400">[3:30 - 6:00] Propuesta de Valor y Ahorro:</strong> ¿Por qué esto ahorra dinero? Al rotar la cuadrícula a la bisectriz óptima, logramos encajar un 18% más de paneles en el mismo techo. Esto representa un ahorro de material de montaje y aumenta la potencia instalada de 3.2 kWp a 4.5 kWp para la misma vivienda sin añadir un solo metro cuadrado de techo.</p>
+            <p id="seg4"><strong class="text-amber-400">[6:00 - 8:00] Demostración Física y Sombras:</strong> El espaciado óptimo calcula las sombras solares en 3D para evitar autotrabamiento de paneles según la altitud solar. Esto nos garantiza un flujo de potencia constante a lo largo de todo el día.</p>
+            <p id="seg5"><strong class="text-amber-400">[8:00 - 10:00] Escalabilidad y Cierre:</strong> Este optimizador exporta planos de escala A1 listos para impresión de maquetas y coordenadas GeoJSON integrables en sistemas de información geográfica SIG. Inviertan en SOLAR-MESH 2D y lideremos la micro-generación eficiente en la costa ecuatoriana.</p>
+          </div>
+        </div>
+
+        <!-- VIDEOS SECTION -->
+        <div class="pt-6 border-t border-white/10">
+          <h3 class="text-sm font-bold uppercase text-cyan-400 tracking-wider mb-4 font-display flex items-center gap-2">
+            <span><i class="fa-brands fa-youtube"></i></span> Material Audiovisual de Apoyo (Ingeniería Solar y Geometría)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="glass-panel p-4 rounded-xl bg-slate-950/20">
+              <p class="text-xs font-semibold text-slate-300 mb-2 font-mono">Clase 1: Optimización de Orientación y Azimut Solar</p>
+              <div class="aspect-video w-full rounded-lg overflow-hidden border border-white/5">
+                <iframe 
+                  class="w-full h-full" 
+                  src="https://www.youtube-nocookie.com/embed/3K_v_pEn5tE" 
+                  title="¿Cómo orientar los paneles solares? Ángulo de inclinación y Azimut" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen>
+                </iframe>
+              </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl bg-slate-950/20">
+              <p class="text-xs font-semibold text-slate-300 mb-2 font-mono">Clase 2: Diseño Fotovoltaico sobre Superficies con Obstáculos</p>
+              <div class="aspect-video w-full rounded-lg overflow-hidden border border-white/5">
+                <iframe 
+                  class="w-full h-full" 
+                  src="https://www.youtube-nocookie.com/embed/9v4_nO1qXzI" 
+                  title="Diseño de instalaciones fotovoltaicas en techos irregulares con obstáculos" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen>
+                </iframe>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: SOLUCIONADOR (MathGPTPro Style) -->
+    <section id="panel-analitico" role="tabpanel" class="tab-content hidden space-y-6">
+      <div class="glass-panel p-6 md:p-8 rounded-2xl space-y-6">
+        
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <h2 class="text-xl md:text-2xl font-bold text-amber-400 font-display">
+            📥 Solucionador Matemático de Teselación
+          </h2>
+          <!-- Info Button -->
+          <button class="inf-btn" onclick="showInfoModal('transversal')" title="Objetivo Didáctico-Técnico">inf</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Column 1 & 2: Step-by-Step Resolution -->
+          <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Step 1 -->
+            <div class="math-step-card">
+              <span class="text-xs font-bold text-cyan-400 font-display uppercase tracking-widest block mb-2">Paso 1: Modelado del Límite de Frontera</span>
+              <p class="text-xs text-slate-300 mb-3">
+                El techo se representa como un polígono no convexo en forma de L de 6 vértices ($V_1$ a $V_6$). Para nuestro análisis, definimos las coordenadas planas principales en metros:
+              </p>
+              <div class="bg-slate-950/60 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300">
+                V1(2,2) → V2(10,2) → V3(10,6) → V4(6,6) → V5(6,10) → V6(2,10)
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="math-step-card">
+              <span class="text-xs font-bold text-cyan-400 font-display uppercase tracking-widest block mb-2">Paso 2: Segmentación y Área Útil</span>
+              <p class="text-xs text-slate-300 mb-3">
+                Segmentamos la forma de L en dos sub-rectángulos principales para calcular el área total del techo:
+              </p>
+              <div class="bg-slate-950/60 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300 space-y-1">
+                $$A_{\text{total}} = A_1 + A_2 = (8 \cdot 4) + (4 \cdot 8) = 64.0\text{ m}^2$$
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="math-step-card">
+              <span class="text-xs font-bold text-cyan-400 font-display uppercase tracking-widest block mb-2">Paso 3: Pérdida en Vértice No Convexo</span>
+              <p class="text-xs text-slate-300 mb-3">
+                Al rotar los paneles de longitud de lado $L$ un ángulo $\theta$, el vértice entrante $(6,6)$ genera un triángulo rectángulo de área muerta (holgura geométrica inservible) definida por la ecuación:
+              </p>
+              <div class="bg-slate-950/60 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300">
+                $$A_{\text{muerta},\theta} = \frac{L^2}{2 \cdot \sin\theta \cdot \cos\theta} = \frac{L^2}{\sin(2\theta)}$$
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="math-step-card">
+              <span class="text-xs font-bold text-cyan-400 font-display uppercase tracking-widest block mb-2">Paso 4: Distancia de Autotrabamiento de Sombras</span>
+              <p class="text-xs text-slate-300 mb-3">
+                Para prevenir que una fila de paneles solares sombree a la siguiente, la separación mínima $D$ entre filas con paneles inclinados un ángulo $\alpha$ y elevación solar mínima de diseño $\beta$ se modela mediante:
+              </p>
+              <div class="bg-slate-950/60 p-3 rounded-lg border border-white/5 font-mono text-xs text-slate-300">
+                $$D = L \cdot \left(\cos\alpha + \frac{\sin\alpha}{\tan\beta}\right)$$
+              </div>
+            </div>
+
+            <!-- Construction Guide & Cheap Materials Section -->
+            <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-4 bg-slate-950/45">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 font-display flex items-center gap-2">
+                <span>🛠️</span> Guía de Construcción: Prototipo Físico Funcional a Escala para el Aula
+              </h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Esta guía paso a paso describe cómo fabricar una <strong>maqueta física funcional a escala (1:20)</strong> para presentar en el aula. El prototipo simula la optimización de paneles solares en la provincia de <strong>Santa Elena</strong> sobre techos no convexos en forma de L (hexágono con vértice entrante de $270^\circ$) usando materiales de papelería y electrónica escolar económicos y de muy fácil acceso.
+              </p>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Guide Step 1 -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
+                  <div class="text-2xs font-bold text-cyan-400 font-display uppercase tracking-wider">1. Estructura del Techo en L (Escala 1:20)</div>
+                  <p class="text-3xs text-slate-400 leading-relaxed">
+                    Construya la base del techo con <strong>cartón pluma (foam board) de 5mm</strong> (1.50 USD la plancha en papelerías) o cartón reciclado de cajas. Corte un polígono L de 40x40 cm, recortando una esquina de 20x20 cm para formar el vértice cóncavo de $270^\circ$, emulando el techo real de $8\text{m} \times 8\text{m}$.
+                  </p>
+                </div>
+
+                <!-- Guide Step 2 -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
+                  <div class="text-2xs font-bold text-cyan-400 font-display uppercase tracking-wider">2. Rieles y Soportes Inclinados a 15°</div>
+                  <p class="text-3xs text-slate-400 leading-relaxed">
+                    Fabrique la estructura de montaje inclinada pegando <strong>palitos de madera de helado</strong> (0.80 USD el paquete) o sorbetes de plástico rígidos. Recorte y pegue los palitos con silicona caliente en forma de cuña triangular para garantizar la inclinación didáctica de $15^\circ$ recomendada.
+                  </p>
+                </div>
+
+                <!-- Guide Step 3 -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
+                  <div class="text-2xs font-bold text-cyan-400 font-display uppercase tracking-wider">3. Mini Módulos Solares Activos</div>
+                  <p class="text-3xs text-slate-400 leading-relaxed">
+                    Adquiera <strong>mini celdas solares fotovoltaicas de silicio (1.5V o 5V)</strong> en tiendas de electrónica escolar o robótica (1.50 a 2.50 USD cada una). Móntelas en hilera sobre los rieles de madera girados a $45^\circ$, eludiendo el vértice cóncavo para demostrar visualmente el máximo empaquetamiento.
+                  </p>
+                </div>
+
+                <!-- Guide Step 4 -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-2">
+                  <div class="text-2xs font-bold text-cyan-400 font-display uppercase tracking-wider">4. Circuito Eléctrico Funcional</div>
+                  <p class="text-3xs text-slate-400 leading-relaxed">
+                    Conecte las mini celdas en serie usando cables delgados de cobre. Dirija el circuito a un <strong>diodo LED de color de alto brillo (0.10 USD)</strong> o a un mini motor DC de juguete con hélice. Al iluminar el arreglo con el flash de un celular o linterna en el aula, ¡el LED se encenderá o la hélice girará!
+                  </p>
+                </div>
+              </div>
+
+              <!-- Schematic Diagrams Section -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/10">
+                <!-- Mechanical Schematic -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-3">
+                  <div class="text-xs font-bold text-cyan-400 font-display uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📐</span> 1. Esquema Mecánico del Soporte (Corte Lateral)
+                  </div>
+                  <div class="w-full flex justify-center items-center bg-slate-950 rounded-lg p-2 h-44">
+                    <svg viewBox="0 0 200 120" class="w-full h-full">
+                      <!-- Ground base line -->
+                      <line x1="10" y1="105" x2="190" y2="105" stroke="#4b5563" stroke-width="2" />
+                      <text x="15" y="115" fill="#94a3b8" font-size="6" font-family="monospace">Base: Cartón Pluma</text>
+                      
+                      <!-- Triangle structure (popsicle sticks) -->
+                      <!-- Horizontal stick -->
+                      <line x1="30" y1="105" x2="150" y2="105" stroke="#d97706" stroke-width="3" stroke-linecap="round" />
+                      <!-- Vertical support stick -->
+                      <line x1="150" y1="105" x2="150" y2="70" stroke="#d97706" stroke-width="3" stroke-linecap="round" />
+                      <!-- Diagonal mounting stick (15 degrees) -->
+                      <line x1="30" y1="105" x2="155" y2="70" stroke="#d97706" stroke-width="3" stroke-linecap="round" />
+                      
+                      <!-- Dotted line to show horizontal level for angle -->
+                      <line x1="30" y1="105" x2="90" y2="105" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+                      <!-- Angle Arc -->
+                      <path d="M 60 105 A 30 30 0 0 0 57 98" fill="none" stroke="#f59e0b" stroke-width="1" />
+                      <text x="65" y="100" fill="#f59e0b" font-size="7" font-family="monospace">15°</text>
+
+                      <!-- Mini Solar Panel mounted on diagonal -->
+                      <rect x="40" y="77" width="100" height="7" transform="rotate(-15 40 77)" fill="#1e3a8a" stroke="#00c8ff" stroke-width="1.5" rx="1" />
+                      <!-- Grid markings on panel -->
+                      <line x1="60" y1="76" x2="62" y2="82" stroke="#00c8ff" stroke-width="1" />
+                      <line x1="80" y1="71" x2="82" y2="77" stroke="#00c8ff" stroke-width="1" />
+                      <line x1="100" y1="66" x2="102" y2="72" stroke="#00c8ff" stroke-width="1" />
+                      <line x1="120" y1="61" x2="122" y2="67" stroke="#00c8ff" stroke-width="1" />
+
+                      <!-- Annotation Labels -->
+                      <text x="90" y="52" fill="#00c8ff" font-size="6" font-family="monospace" text-anchor="middle">Mini Panel Solar</text>
+                      <path d="M 90 55 L 90 68" stroke="#00c8ff" stroke-width="0.5" stroke-dasharray="1,1" />
+                      
+                      <text x="160" y="85" fill="#d97706" font-size="6" font-family="monospace">Estructura: Palitos</text>
+                    </svg>
+                  </div>
+                  <div class="text-3xs text-slate-400 leading-normal">
+                    Montaje triangular con madera balsa o palitos de helado. La inclinación de $15^\circ$ permite simular de forma óptima el escurrimiento pluvial y el ángulo de captación regional en Santa Elena.
+                  </div>
+                </div>
+
+                <!-- Electrical Schematic -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-white/5 space-y-3">
+                  <div class="text-xs font-bold text-cyan-400 font-display uppercase tracking-wider flex items-center gap-1.5">
+                    <span>⚡</span> 2. Esquema de Circuito Eléctrico Funcional
+                  </div>
+                  <div class="w-full flex justify-center items-center bg-slate-950 rounded-lg p-2 h-44">
+                    <svg viewBox="0 0 200 120" class="w-full h-full">
+                      <!-- Solar Cell 1 -->
+                      <rect x="15" y="30" width="35" height="20" fill="#1e3a8a" stroke="#00c8ff" stroke-width="1" rx="2" />
+                      <text x="32" y="42" fill="#ffffff" font-size="6" font-family="sans-serif" text-anchor="middle">Celda 1</text>
+                      <text x="18" y="47" fill="#94a3b8" font-size="5" font-family="monospace">(+)</text>
+                      <text x="42" y="47" fill="#94a3b8" font-size="5" font-family="monospace">(-)</text>
+
+                      <!-- Solar Cell 2 -->
+                      <rect x="65" y="30" width="35" height="20" fill="#1e3a8a" stroke="#00c8ff" stroke-width="1" rx="2" />
+                      <text x="82" y="42" fill="#ffffff" font-size="6" font-family="sans-serif" text-anchor="middle">Celda 2</text>
+                      <text x="68" y="47" fill="#94a3b8" font-size="5" font-family="monospace">(+)</text>
+                      <text x="92" y="47" fill="#94a3b8" font-size="5" font-family="monospace">(-)</text>
+
+                      <!-- Connecting wire: Celda 1 (-) to Celda 2 (+) -->
+                      <line x1="50" y1="45" x2="65" y2="45" stroke="#38bdf8" stroke-width="1.5" />
+
+                      <!-- Solar Cell 3 -->
+                      <rect x="115" y="30" width="35" height="20" fill="#1e3a8a" stroke="#00c8ff" stroke-width="1" rx="2" />
+                      <text x="132" y="42" fill="#ffffff" font-size="6" font-family="sans-serif" text-anchor="middle">Celda 3</text>
+                      <text x="118" y="47" fill="#94a3b8" font-size="5" font-family="monospace">(+)</text>
+                      <text x="142" y="47" fill="#94a3b8" font-size="5" font-family="monospace">(-)</text>
+
+                      <!-- Connecting wire: Celda 2 (-) to Celda 3 (+) -->
+                      <line x1="100" y1="45" x2="115" y2="45" stroke="#38bdf8" stroke-width="1.5" />
+
+                      <!-- Return Wires to LED -->
+                      <!-- Positive Wire (Red) -->
+                      <path d="M 15 45 L 8 45 L 8 95 L 60 95" fill="none" stroke="#ef4444" stroke-width="1.5" />
+                      <text x="10" y="85" fill="#ef4444" font-size="5" font-family="monospace">Ánodo (+)</text>
+
+                      <!-- Negative Wire (Black) -->
+                      <path d="M 150 45 L 157 45 L 157 95 L 105 95" fill="none" stroke="#3b82f6" stroke-width="1.5" />
+                      <text x="160" y="85" fill="#3b82f6" font-size="5" font-family="monospace">Cátodo (-)</text>
+
+                      <!-- LED Symbol -->
+                      <circle cx="82" y="95" r="10" fill="#10b981" fill-opacity="0.2" stroke="#10b981" stroke-width="1.5" />
+                      <!-- Triangle for LED -->
+                      <polygon points="78,90 78,100 86,95" fill="#10b981" />
+                      <line x1="86" y1="90" x2="86" y2="100" stroke="#10b981" stroke-width="1.5" />
+                      <!-- Emission Arrows -->
+                      <line x1="84" y1="83" x2="90" y2="77" stroke="#10b981" stroke-width="1" />
+                      <line x1="88" y1="85" x2="94" y2="79" stroke="#10b981" stroke-width="1" />
+                      <text x="82" y="112" fill="#10b981" font-size="7" font-family="sans-serif" text-anchor="middle" font-weight="bold">LED (Carga)</text>
+                    </svg>
+                  </div>
+                  <div class="text-3xs text-slate-400 leading-normal">
+                    Circuito en serie. Suma las tensiones individuales: $V_{\text{total}} = V_1 + V_2 + V_3$. Permite alimentar el diodo LED de alto brillo utilizando una lámpara del aula como fuente de luz incidente artificial.
+                  </div>
+                </div>
+              </div>
+
+              </div>
+
+              <!-- Interactive wiring sandbox (Automation Studio style) -->
+              <div class="bg-slate-950/80 p-5 rounded-xl border border-cyan-500/20 space-y-4 mt-6">
+                <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-cyan-400">⚡</span>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200 font-display">Laboratorio de Cableado Interactivo (Automation Studio)</h4>
+                  </div>
+                  <span class="text-3xs font-mono text-cyan-400 animate-pulse">● Modo Diseño Activo</span>
+                </div>
+                
+                <p class="text-3xs text-slate-400 leading-normal">
+                  Instrucciones: Conecte las celdas en serie y cierre el circuito con el LED. Haga clic sobre un terminal de un componente y arrastre hasta el terminal de otro para trazar un cable.
+                </p>
+
+                <!-- Components sandbox wrapper -->
+                <div class="relative w-full bg-slate-950 rounded-xl border border-white/5 p-6 min-h-[180px] flex flex-wrap justify-around items-center gap-6 select-none" id="wiring-sandbox">
+                  <!-- Overlay canvas for wires -->
+                  <canvas id="wireCanvas" class="absolute inset-0 w-full h-full pointer-events-auto z-10 cursor-crosshair"></canvas>
+                  
+                  <!-- Component: Celda 1 -->
+                  <div class="w-24 bg-slate-900 border border-white/10 rounded-lg p-3 flex flex-col items-center relative z-0">
+                    <span class="text-3xs font-bold text-white block mb-1">CELDA 1</span>
+                    <div class="w-16 h-8 bg-blue-950/80 rounded border border-cyan-500/20 mb-2 flex items-center justify-center text-4xs text-cyan-400 font-mono">1.5 V</div>
+                    <div class="flex justify-between w-full px-1">
+                      <!-- Terminals -->
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-rose-600 hover:bg-rose-500 border border-white/30 cursor-pointer wire-terminal" id="term-p1-pos" data-term="p1_pos"></div>
+                        <span class="text-4xs text-rose-400 font-bold">(+)</span>
+                      </div>
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-slate-700 hover:bg-slate-600 border border-white/30 cursor-pointer wire-terminal" id="term-p1-neg" data-term="p1_neg"></div>
+                        <span class="text-4xs text-slate-400 font-bold">(-)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Component: Celda 2 -->
+                  <div class="w-24 bg-slate-900 border border-white/10 rounded-lg p-3 flex flex-col items-center relative z-0">
+                    <span class="text-3xs font-bold text-white block mb-1">CELDA 2</span>
+                    <div class="w-16 h-8 bg-blue-950/80 rounded border border-cyan-500/20 mb-2 flex items-center justify-center text-4xs text-cyan-400 font-mono">1.5 V</div>
+                    <div class="flex justify-between w-full px-1">
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-rose-600 hover:bg-rose-500 border border-white/30 cursor-pointer wire-terminal" id="term-p2-pos" data-term="p2_pos"></div>
+                        <span class="text-4xs text-rose-400 font-bold">(+)</span>
+                      </div>
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-slate-700 hover:bg-slate-600 border border-white/30 cursor-pointer wire-terminal" id="term-p2-neg" data-term="p2_neg"></div>
+                        <span class="text-4xs text-slate-400 font-bold">(-)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Component: Celda 3 -->
+                  <div class="w-24 bg-slate-900 border border-white/10 rounded-lg p-3 flex flex-col items-center relative z-0">
+                    <span class="text-3xs font-bold text-white block mb-1">CELDA 3</span>
+                    <div class="w-16 h-8 bg-blue-950/80 rounded border border-cyan-500/20 mb-2 flex items-center justify-center text-4xs text-cyan-400 font-mono">1.5 V</div>
+                    <div class="flex justify-between w-full px-1">
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-rose-600 hover:bg-rose-500 border border-white/30 cursor-pointer wire-terminal" id="term-p3-pos" data-term="p3_pos"></div>
+                        <span class="text-4xs text-rose-400 font-bold">(+)</span>
+                      </div>
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-slate-700 hover:bg-slate-600 border border-white/30 cursor-pointer wire-terminal" id="term-p3-neg" data-term="p3_neg"></div>
+                        <span class="text-4xs text-slate-400 font-bold">(-)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Component: LED -->
+                  <div class="w-24 bg-slate-900 border border-white/10 rounded-lg p-3 flex flex-col items-center relative z-0">
+                    <span class="text-3xs font-bold text-white block mb-1">LED DIODO</span>
+                    <div class="w-16 h-8 bg-emerald-950/60 rounded border border-emerald-500/20 mb-2 flex items-center justify-center text-4xs text-emerald-400 font-mono transition-colors duration-300" id="wire-led-light">Carga</div>
+                    <div class="flex justify-between w-full px-1">
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-rose-600 hover:bg-rose-500 border border-white/30 cursor-pointer wire-terminal" id="term-led-pos" data-term="led_pos"></div>
+                        <span class="text-4xs text-rose-400 font-bold">Ánodo(+)</span>
+                      </div>
+                      <div class="flex flex-col items-center gap-0.5">
+                        <div class="w-3.5 h-3.5 rounded-full bg-slate-700 hover:bg-slate-600 border border-white/30 cursor-pointer wire-terminal" id="term-led-neg" data-term="led_neg"></div>
+                        <span class="text-4xs text-slate-400 font-bold">Cátodo(-)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Controls row -->
+                <div class="flex gap-2 justify-between items-center">
+                  <div class="flex gap-2">
+                    <button onclick="checkWiringCircuit()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display rounded-lg transition"><i class="fa-solid fa-bolt"></i> Simular Circuito</button>
+                    <button onclick="clearWiringCircuit()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs font-display rounded-lg border border-white/10 transition"><i class="fa-solid fa-trash-can"></i> Limpiar Cables</button>
+                  </div>
+                  <div id="wiring-status" class="text-2xs font-mono text-slate-400">Estado: Sin conexiones.</div>
+                </div>
+              </div>
+
+              <!-- Economic analysis alert -->
+              <div class="p-3.5 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-2xs text-cyan-300 font-mono leading-relaxed">
+                💡 <strong>Presupuesto Escolar Estimado:</strong> El costo total de fabricación de este prototipo funcional ronda los <strong>8.00 a 12.00 USD</strong> en materiales (mini paneles, cartón y cables), proporcionando una herramienta didáctica de alto impacto visual y científico para las exposiciones de clase.
+              </div>
+            </div>
+
+            <!-- AutoCAD-Style Technical Blueprint Card -->
+            <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-4 bg-slate-950/60 mt-6">
+              <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-cyan-400 font-display flex items-center gap-2">
+                  <span>📐</span> Plano Técnico CAD Integrado (AutoCAD Vector Layout)
+                </h3>
+                <span class="px-2 py-0.5 text-3xs font-mono rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">DWG / Vector Plan</span>
+              </div>
+              
+              <p class="text-xs text-slate-300">
+                A continuación se muestra el plano técnico de diseño CAD del techo residencial en L y la distribución óptima de los paneles solares a escala didáctica.
+              </p>
+
+              <!-- CAD Viewport -->
+              <div class="w-full bg-[#02050b] rounded-xl border border-cyan-500/30 p-4 relative overflow-hidden flex flex-col items-center">
+                <!-- CAD Grid lines background -->
+                <div class="absolute inset-0 bg-[linear-gradient(to_right,rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                
+                <svg viewBox="0 0 480 340" class="w-full h-auto relative z-10">
+                  <!-- Outer border of plan -->
+                  <rect x="5" y="5" width="470" height="330" fill="none" stroke="#00c8ff" stroke-width="1" stroke-dasharray="8,2" />
+                  
+                  <!-- Coordinate System Axis Indicator -->
+                  <line x1="25" y1="290" x2="55" y2="290" stroke="#ef4444" stroke-width="1" />
+                  <line x1="25" y1="290" x2="25" y2="260" stroke="#22c55e" stroke-width="1" />
+                  <text x="58" y="292" fill="#ef4444" font-size="5" font-family="monospace">X</text>
+                  <text x="23" y="255" fill="#22c55e" font-size="5" font-family="monospace">Y</text>
+
+                  <!-- 2D L-Roof Outline (AutoCAD style: Thin Cyan lines) -->
+                  <!-- Centered on x: [100, 260], y: [40, 200] -->
+                  <polygon points="100,200 260,200 260,120 180,120 180,40 100,40" fill="none" stroke="#00c8ff" stroke-width="2" />
+                  
+                  <!-- Vertex markers and coordinates -->
+                  <circle cx="100" cy="200" r="2" fill="#ef4444" />
+                  <text x="85" y="210" fill="#a8a29e" font-size="5" font-family="monospace">V1(2,2)</text>
+                  
+                  <circle cx="260" cy="200" r="2" fill="#ef4444" />
+                  <text x="265" y="205" fill="#a8a29e" font-size="5" font-family="monospace">V2(10,2)</text>
+                  
+                  <circle cx="260" cy="120" r="2" fill="#ef4444" />
+                  <text x="265" y="115" fill="#a8a29e" font-size="5" font-family="monospace">V3(10,6)</text>
+                  
+                  <circle cx="180" cy="120" r="2" fill="#ef4444" />
+                  <text x="185" y="125" fill="#a8a29e" font-size="5" font-family="monospace">V4(6,6)</text>
+                  
+                  <circle cx="180" cy="40" r="2" fill="#ef4444" />
+                  <text x="185" y="35" fill="#a8a29e" font-size="5" font-family="monospace">V5(6,10)</text>
+                  
+                  <circle cx="100" cy="40" r="2" fill="#ef4444" />
+                  <text x="80" y="35" fill="#a8a29e" font-size="5" font-family="monospace">V6(2,10)</text>
+
+                  <!-- CAD Dimension Lines (Green) -->
+                  <!-- Bottom dimension line: 8.00m -->
+                  <line x1="100" y1="220" x2="260" y2="220" stroke="#22c55e" stroke-width="0.8" />
+                  <line x1="100" y1="217" x2="100" y2="223" stroke="#22c55e" stroke-width="0.8" />
+                  <line x1="260" y1="217" x2="260" y2="223" stroke="#22c55e" stroke-width="0.8" />
+                  <text x="180" y="217" fill="#22c55e" font-size="6" font-family="monospace" text-anchor="middle">8.00 m (Ancho)</text>
+
+                  <!-- Left dimension line: 8.00m -->
+                  <line x1="80" y1="40" x2="80" y2="200" stroke="#22c55e" stroke-width="0.8" />
+                  <line x1="77" y1="40" x2="83" y2="40" stroke="#22c55e" stroke-width="0.8" />
+                  <line x1="77" y1="200" x2="83" y2="200" stroke="#22c55e" stroke-width="0.8" />
+                  <text x="73" y="120" fill="#22c55e" font-size="6" font-family="monospace" text-anchor="middle" transform="rotate(-90 73 120)">8.00 m (Largo)</text>
+
+                  <!-- Inner corner dimension lines -->
+                  <!-- Retiro horizontal: 4.00m -->
+                  <line x1="180" y1="105" x2="260" y2="105" stroke="#22c55e" stroke-width="0.8" />
+                  <line x1="180" y1="102" x2="180" y2="108" stroke="#22c55e" stroke-width="0.8" />
+                  <line x1="260" y1="102" x2="260" y2="108" stroke="#22c55e" stroke-width="0.8" />
+                  <text x="220" y="101" fill="#22c55e" font-size="5" font-family="monospace" text-anchor="middle">4.00 m</text>
+
+                  <!-- Rotated panel grid preview at 45 degrees -->
+                  <g opacity="0.6">
+                    <!-- Draw 5 sample rotated panels inside L outline -->
+                    <rect x="130" y="150" width="24" height="24" transform="rotate(45 130 150)" fill="none" stroke="#eab308" stroke-width="1" />
+                    <rect x="155" y="150" width="24" height="24" transform="rotate(45 155 150)" fill="none" stroke="#eab308" stroke-width="1" />
+                    <rect x="130" y="100" width="24" height="24" transform="rotate(45 130 100)" fill="none" stroke="#eab308" stroke-width="1" />
+                    <rect x="210" y="150" width="24" height="24" transform="rotate(45 210 150)" fill="none" stroke="#eab308" stroke-width="1" />
+                    <rect x="130" y="60" width="24" height="24" transform="rotate(45 130 60)" fill="none" stroke="#eab308" stroke-width="1" />
+                  </g>
+                  <text x="135" y="180" fill="#eab308" font-size="5" font-family="monospace">Mod. Rotados a 45°</text>
+
+                  <!-- Cajetín de Ingeniería / CAD Title Block (Bottom Right) -->
+                  <g transform="translate(280, 230)">
+                    <!-- Table borders -->
+                    <rect x="0" y="0" width="190" height="100" fill="#040914" stroke="#00c8ff" stroke-width="1.5" />
+                    <line x1="0" y1="20" x2="190" y2="20" stroke="#00c8ff" stroke-width="1" />
+                    <line x1="0" y1="40" x2="190" y2="40" stroke="#00c8ff" stroke-width="1" />
+                    <line x1="0" y1="60" x2="190" y2="60" stroke="#00c8ff" stroke-width="1" />
+                    <line x1="0" y1="80" x2="190" y2="80" stroke="#00c8ff" stroke-width="1" />
+                    <line x1="95" y1="60" x2="95" y2="100" stroke="#00c8ff" stroke-width="1" />
+
+                    <!-- Title Block Text -->
+                    <text x="95" y="13" fill="#00c8ff" font-size="6" font-family="sans-serif" font-weight="bold" text-anchor="middle">OPTIMIZACIÓN SOLAR: SANTA ELENA</text>
+                    <text x="95" y="32" fill="#ffffff" font-size="5.5" font-family="sans-serif" text-anchor="middle">Plano: Planta de Distribución Geométrica</text>
+                    <text x="95" y="52" fill="#ffffff" font-size="5" font-family="sans-serif" text-anchor="middle">Institución: UPSE - Lab. Geometría</text>
+                    
+                    <text x="5" y="72" fill="#a8a29e" font-size="4.5" font-family="monospace">Escala: 1:20</text>
+                    <text x="100" y="72" fill="#a8a29e" font-size="4.5" font-family="monospace">Fecha: 2026-06-28</text>
+                    
+                    <text x="5" y="92" fill="#a8a29e" font-size="4.5" font-family="monospace">Lámina: U2-PL1</text>
+                    <text x="100" y="92" fill="#a8a29e" font-size="4.5" font-family="monospace">Formato: A1 (Escalado)</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Column 3: Comparison Table & Analysis -->
+          <div class="lg:col-span-1 space-y-6">
+            <div class="glass-panel p-6 rounded-2xl bg-slate-950/40 border border-white/10 space-y-4">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200 font-display">Escenarios de Rotación</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Comparativa computacional del área residual y la eficiencia en la instalación residencial según la rotación de los paneles.
+              </p>
+              
+              <div class="overflow-hidden rounded-xl border border-white/10">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead class="bg-slate-900 font-display text-slate-300 uppercase tracking-wider">
+                    <tr>
+                      <th class="p-3 border-b border-white/10">Ángulo</th>
+                      <th class="p-3 border-b border-white/10">Área Muerta</th>
+                      <th class="p-3 border-b border-white/10">Eficiencia</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-white/5 font-mono">
+                    <tr>
+                      <td class="p-3 text-cyan-400">0.0°</td>
+                      <td class="p-3 text-rose-400">Max Esquina</td>
+                      <td class="p-3">75.0%</td>
+                    </tr>
+                    <tr>
+                      <td class="p-3 text-cyan-400">45.0° (Opt)</td>
+                      <td id="table-dead-45" class="p-3 text-rose-400">--</td>
+                      <td id="table-eff-45" class="p-3 text-emerald-400">--</td>
+                    </tr>
+                    <tr class="bg-amber-500/10">
+                      <td id="table-angle-val" class="p-3 text-amber-400 font-bold">0.0°</td>
+                      <td id="table-dead-val" class="p-3 text-rose-400">--</td>
+                      <td id="table-eff-val" class="p-3 text-emerald-400">--</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- LaTeX Summary -->
+              <div class="p-4 rounded-xl bg-slate-950/80 border border-white/5 text-2xs space-y-2">
+                <span class="font-bold text-white block font-sans">Ecuación de Ocupación:</span>
+                $$\eta_{\text{espacial}} = \frac{A_{\text{total}} - A_{\text{muerta},\theta}}{A_{\text{total}}} \cdot 100\%$$
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: LABORATORIO 2D / 3D -->
+    <section id="panel-simulacion" role="tabpanel" class="tab-content hidden space-y-6">
+      
+      <!-- Controls Panel -->
+      <div class="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+        <div>
+          <label for="slider-angle" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-display">
+            <i class="fa-solid fa-rotate text-cyan-400"></i> Ángulo Grilla ($\theta$): <span id="lbl-angle" class="text-cyan-400 font-mono text-sm ml-2">15°</span>
+          </label>
+          <input id="slider-angle" type="range" min="0" max="90" value="15" class="w-full accent-cyan-400 bg-slate-900 rounded-lg appearance-none h-2 cursor-pointer">
+        </div>
+        
+        <div>
+          <label for="slider-side" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-display">
+            <i class="fa-solid fa-up-right-and-down-left-from-center text-amber-400"></i> Tamaño Panel ($L$): <span id="lbl-side" class="text-amber-400 font-mono text-sm ml-2">1.2 m</span>
+          </label>
+          <input id="slider-side" type="range" min="8" max="25" value="12" class="w-full accent-amber-400 bg-slate-900 rounded-lg appearance-none h-2 cursor-pointer">
+        </div>
+
+        <div>
+          <label for="slider-sun" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-display">
+            <i class="fa-solid fa-sun text-yellow-400"></i> Altitud Sol ($\beta$): <span id="lbl-sun" class="text-yellow-400 font-mono text-sm ml-2">45°</span>
+          </label>
+          <input id="slider-sun" type="range" min="15" max="90" value="45" class="w-full accent-yellow-400 bg-slate-900 rounded-lg appearance-none h-2 cursor-pointer">
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center h-full pt-4 md:pt-0">
+          <button id="btn-play-rotation" class="w-full px-4 py-3 rounded-xl border border-cyan-400/25 hover:border-cyan-400 text-3xs font-bold tracking-widest font-display text-cyan-400 transition-all duration-200 bg-cyan-950/20 uppercase flex items-center justify-center gap-2">
+            <i class="fa-solid fa-play" id="btn-play-icon"></i> <span id="btn-play-text">Iniciar Rotación</span>
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 justify-center items-center h-full pt-4 md:pt-0">
+          <button id="btn-reset-sim" class="w-full px-4 py-3 rounded-xl border border-rose-500/25 hover:border-rose-500 text-3xs font-bold tracking-widest font-display text-rose-400 transition-all duration-200 bg-rose-950/20 uppercase flex items-center justify-center gap-2">
+            <i class="fa-solid fa-rotate-left"></i> Reiniciar
+          </button>
+        </div>
+      </div>
+
+      <!-- Large Glowing Metric Cards Row -->
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div class="glass-panel p-4 rounded-xl border border-white/5 text-center flex flex-col justify-center">
+          <span id="card-panels-val" class="text-xl md:text-2xl font-bold font-display text-amber-400">0</span>
+          <span class="text-3xs font-mono uppercase tracking-wider text-slate-400 mt-1">Módulos</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/5 text-center flex flex-col justify-center">
+          <span id="card-dead-val" class="text-xl md:text-2xl font-bold font-display text-rose-400">0.00 m²</span>
+          <span class="text-3xs font-mono uppercase tracking-wider text-slate-400 mt-1">Área Muerta ($A_m$)</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/5 text-center flex flex-col justify-center">
+          <span id="card-util-val" class="text-xl md:text-2xl font-bold font-display text-cyan-400">0.00 m²</span>
+          <span class="text-3xs font-mono uppercase tracking-wider text-slate-400 mt-1">Área Útil</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/5 text-center flex flex-col justify-center">
+          <span id="card-eff-val" class="text-xl md:text-2xl font-bold font-display text-emerald-400">0.0%</span>
+          <span class="text-3xs font-mono uppercase tracking-wider text-slate-400 mt-1">Eficiencia ($\eta$)</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/5 text-center flex flex-col justify-center">
+          <span id="card-power-val" class="text-xl md:text-2xl font-bold font-display text-amber-500">0.0 kWp</span>
+          <span class="text-3xs font-mono uppercase tracking-wider text-slate-400 mt-1">Potencia Total</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/5 text-center flex flex-col justify-center items-center">
+          <span id="card-status-val" class="text-2xs font-bold font-display px-2 py-1.5 rounded-lg border">--</span>
+          <span class="text-3xs font-mono uppercase tracking-wider text-slate-400 mt-1">Estado</span>
+        </div>
+      </div>
+
+      <!-- Viewports Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- 2D Canvas Viewport -->
+        <div class="glass-panel p-4 rounded-2xl flex flex-col">
+          <div class="flex justify-between items-center mb-3 px-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold tracking-wider font-display text-slate-300">Vista Métrica Plana (2D)</h3>
+              <button class="inf-btn" onclick="showInfoModal('oleaje')" title="Objetivo Didáctico-Técnico">inf</button>
+            </div>
+            <span class="text-2xs font-mono text-rose-400 flex items-center gap-1">■ Sombras</span>
+          </div>
+          <div class="w-full bg-slate-950/80 rounded-xl overflow-hidden border border-white/5 flex flex-col items-center justify-center p-4">
+            <div class="relative w-full flex justify-center">
+              <canvas id="canvas2d" width="500" height="500" class="max-w-full block aspect-square cursor-crosshair"></canvas>
+              <div id="canvas-tooltip" class="absolute pointer-events-none bg-slate-900/95 border border-cyan-500/30 text-white p-2.5 rounded-lg text-2xs font-mono shadow-2xl opacity-0 transition-opacity duration-200 z-30 space-y-1"></div>
+            </div>
+            
+            <!-- Dynamic Color Legend -->
+            <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 pt-4 border-t border-white/5 w-full text-3xs font-mono text-slate-400">
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-amber-400/20 border border-amber-400/60"></span> Panel Activo (0.35 kWp)</div>
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-rose-500/20 border border-rose-500/60"></span> Área Muerta ($A_m$)</div>
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded border border-cyan-400/60" style="background: rgba(20, 32, 60, 0.6)"></span> Contorno Techo L</div>
+              <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-slate-950/80 border border-black/35"></span> Sombras Mutuas ($\beta$)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3D WebGL Viewport -->
+        <div class="glass-panel p-4 rounded-2xl flex flex-col">
+          <div class="flex justify-between items-center mb-3 px-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold tracking-wider font-display text-slate-300">Maqueta Estructural (WebGL 3D)</h3>
+              <button class="inf-btn" onclick="showInfoModal('isotropia')" title="Objetivo Didáctico-Técnico">inf</button>
+            </div>
+            <span class="text-2xs font-mono text-amber-400 animate-pulse">● Sombras Dinámicas</span>
+          </div>
+          <div id="container3d" class="w-full bg-slate-950/80 rounded-xl overflow-hidden border border-white/5 aspect-square relative">
+            <!-- Three.js Canvas gets injected here -->
+            
+            <!-- 3D HUD Tooltip Overlay -->
+            <div id="hud3d" class="absolute top-4 left-4 bg-slate-900/90 border border-cyan-500/30 text-white p-3.5 rounded-xl font-mono text-2xs space-y-1 shadow-2xl opacity-0 transition-opacity duration-300 pointer-events-none z-10 w-44">
+              <div class="text-cyan-400 font-bold border-b border-white/10 pb-1 mb-1">⚡ INFO MÓDULO 3D</div>
+              <div id="hud3d-id">ID: Panel #--</div>
+              <div id="hud3d-coords">Coord: (-, -)m</div>
+              <div id="hud3d-power">Generación: -- kWp</div>
+              <div id="hud3d-shadow">Sombra L: -- m</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Solar Ray Impact & Force Decomposition Simulator -->
+      <div class="glass-panel p-6 rounded-2xl border border-white/5 space-y-4">
+        <div class="flex justify-between items-center border-b border-white/10 pb-3">
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-bold tracking-wider font-display text-slate-300">💥 Simulador de Impacto de Rayos Solares y Distribución de Fuerzas Vectoriales</h3>
+            <button class="inf-btn" onclick="showInfoModal('transversal')" title="Objetivo Didáctico-Técnico">inf</button>
+          </div>
+          <span class="text-2xs font-mono text-cyan-400">Modelo Físico: Ley del Coseno de Lambert</span>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+          <!-- Vector canvas -->
+          <div class="lg:col-span-2 bg-slate-950/60 rounded-xl border border-white/5 p-4 flex justify-center items-center relative h-64">
+            <canvas id="rayCanvas" class="w-full h-full max-h-60"></canvas>
+          </div>
+          
+          <!-- Vector equations and stats -->
+          <div class="space-y-4">
+            <div class="bg-slate-950/40 p-4 rounded-xl border border-white/5 space-y-2">
+              <div class="text-2xs font-mono text-slate-400 uppercase tracking-widest">Fórmulas Vectoriales</div>
+              <div class="text-xs text-slate-300 font-mono space-y-2">
+                <div>$\vec{S}_{\text{incidente}} = \vec{F}_n + \vec{F}_t$</div>
+                <div>Irradiancia Normal: $I_n = I_0 \cos(\theta_{\text{inc}})$</div>
+                <div>Fuerza Tangente: $I_t = I_0 \sin(\theta_{\text{inc}})$</div>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-white/5">
+                <div class="text-3xs font-mono text-slate-400 uppercase">Ángulo Incidencia</div>
+                <div id="ray-inc-angle" class="text-sm font-bold font-mono text-cyan-400">--</div>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-white/5">
+                <div class="text-3xs font-mono text-slate-400 uppercase">Eficiencia Cosinoidal</div>
+                <div id="ray-cos-eff" class="text-sm font-bold font-mono text-emerald-400">--</div>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-white/5">
+                <div class="text-3xs font-mono text-slate-400 uppercase">Componente Perpendicular</div>
+                <div id="ray-norm-val" class="text-sm font-bold font-mono text-amber-400">--</div>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-white/5">
+                <div class="text-3xs font-mono text-slate-400 uppercase">Componente Tangente</div>
+                <div id="ray-tang-val" class="text-sm font-bold font-mono text-rose-400">--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dedicated Control Bar -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+          <!-- Animation play button -->
+          <div class="flex items-center gap-3">
+            <button id="btn-play-ray" class="px-5 py-2.5 rounded-xl border border-cyan-400/25 hover:border-cyan-400 text-2xs font-bold tracking-widest font-display text-cyan-400 bg-cyan-950/20 uppercase flex items-center gap-2 transition duration-200">
+              <i class="fa-solid fa-play" id="btn-play-ray-icon"></i> <span id="btn-play-ray-text">Iniciar</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Parameter Sliders -->
+          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <div>
+              <label for="slider-ray-sun" class="block text-3xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-display">
+                Altitud Solar $\beta$ (°): <span id="lbl-ray-sun" class="text-cyan-400 font-mono text-xs ml-1">45°</span>
+              </label>
+              <input id="slider-ray-sun" type="range" min="15" max="90" value="45" class="w-full accent-cyan-400 bg-slate-950 rounded-lg appearance-none h-1.5 cursor-pointer">
+            </div>
+
+            <div>
+              <label for="slider-ray-tilt" class="block text-3xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-display">
+                Inclinación Panel $\gamma$ (°): <span id="lbl-ray-tilt" class="text-amber-400 font-mono text-xs ml-1">15°</span>
+              </label>
+              <input id="slider-ray-tilt" type="range" min="0" max="60" value="15" class="w-full accent-amber-400 bg-slate-950 rounded-lg appearance-none h-1.5 cursor-pointer">
+            </div>
+          </div>
+
+          <!-- Reset button -->
+          <div class="flex items-center gap-3">
+            <button id="btn-reset-ray" class="px-5 py-2.5 rounded-xl border border-rose-500/25 hover:border-rose-500 text-2xs font-bold tracking-widest font-display text-rose-400 bg-rose-950/20 uppercase flex items-center gap-2 transition duration-200">
+              <i class="fa-solid fa-rotate-left"></i> Reiniciar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SIG & FLASH -->
+    <section id="panel-sig" role="tabpanel" class="tab-content hidden space-y-6">
+      
+      <!-- Top controls & SIG exports -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- SIG card -->
+        <div class="glass-panel p-6 rounded-2xl md:col-span-1 space-y-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold font-display text-amber-400">🌍 Herramientas SIG & Maqueta</h3>
+            <button class="inf-btn" onclick="showInfoModal('impacto')" title="Objetivo Didáctico-Técnico">inf</button>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Exporte los datos georreferenciados del perímetro optimizado para cargarlos en software de sistemas de información geográfica SIG o para imprimir la plantilla métrica.
+          </p>
+          
+          <div class="space-y-3">
+            <button class="w-full py-3 px-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 text-xs font-bold tracking-wider font-display transition-all duration-200" onclick="exportGeoJSON()">
+              EXPORTAR COORDENADAS GEOJSON
+            </button>
+            <button class="w-full py-3 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 text-xs font-bold tracking-wider font-display transition-all duration-200" onclick="triggerA1Report()">
+              GENERAR PLANO TÉCNICO A1
+            </button>
+          </div>
+
+          <div class="p-4 bg-slate-950/50 rounded-xl border border-white/5 font-mono text-2xs text-slate-400 space-y-1">
+            <span class="text-xs font-bold text-white block font-sans mb-1">Vértices del Hexágono (m):</span>
+            <p>V1: (2.0, 2.0)</p>
+            <p>V2: (10.0, 2.0)</p>
+            <p>V3: (10.0, 6.0)</p>
+            <p>V4: (6.0, 6.0)</p>
+            <p>V5: (6.0, 10.0)</p>
+            <p>V6: (2.0, 10.0)</p>
+          </div>
+        </div>
+
+        <!-- Emulated Flash Timeline card -->
+        <div class="glass-panel p-6 rounded-2xl md:col-span-2 flex flex-col justify-between space-y-6">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-lg font-bold font-display text-white">🎬 Presentación de Diapositivas Emulador Flash</h3>
+              <span class="font-mono text-2xs px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded">SWF Emulated</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">
+              Línea de tiempo basada en fotogramas interactivos para simulaciones educativas automatizadas.
+            </p>
+
+            <!-- SWF Display area -->
+            <div class="w-full flash-window rounded-xl border border-white/10 p-6 min-h-[220px] flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/5 to-transparent pointer-events-none"></div>
+              <div class="w-full md:w-2/5 flex items-center justify-center relative z-10">
+                <img id="flash-slide-img" src="./slide1.png" class="w-full aspect-video object-cover rounded-lg border border-white/15 shadow-2xl transition-all duration-500 transform hover:scale-105 cursor-zoom-in" onclick="openFlashLightbox()" alt="Slide Illustration">
+                <div class="absolute inset-0 rounded-lg bg-gradient-to-t from-slate-950/40 to-transparent pointer-events-none"></div>
+              </div>
+              <div class="w-full md:w-3/5 text-left space-y-2 relative z-10">
+                <h4 id="flash-slide-title" class="text-lg font-bold font-display text-amber-400 tracking-wide">Cargando Módulo...</h4>
+                <p id="flash-slide-desc" class="text-xs md:text-sm text-slate-300 leading-relaxed">Inicializando la línea de tiempo instruccional.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flash timeline controls -->
+          <div class="space-y-4">
+            <div class="flex items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-white/5">
+              <div class="flex gap-1.5 border-r border-white/10 pr-3">
+                <button onclick="playFlashTimeline()" class="p-2 rounded bg-white/5 hover:bg-cyan-500/20 text-cyan-400 transition" title="Play">▶</button>
+                <button onclick="pauseFlashTimeline()" class="p-2 rounded bg-white/5 hover:bg-amber-500/20 text-amber-400 transition" title="Pause">❚❚</button>
+                <button onclick="stopFlashTimeline()" class="p-2 rounded bg-white/5 hover:bg-rose-500/20 text-rose-400 transition" title="Stop">■</button>
+                <button id="btn-flash-audio" onclick="toggleFlashAudio()" class="p-2 rounded bg-white/5 hover:bg-violet-500/20 text-violet-400 transition" title="Narración de Audio"><i class="fa-solid fa-volume-high"></i></button>
+              </div>
+
+              <!-- Frame slider -->
+              <div class="flex-1 flex justify-between items-center px-4 relative">
+                <div class="absolute h-0.5 bg-slate-800 left-6 right-6 top-1/2 -translate-y-1/2 z-0"></div>
+                <div id="flash-progress-bar" class="absolute h-0.5 bg-cyan-400 left-6 w-0 top-1/2 -translate-y-1/2 z-0 transition-all duration-300"></div>
+                
+                <button onclick="jumpToFrame(1)" class="flash-kf w-4 h-4 rounded-full bg-slate-700 border-2 border-slate-950 relative z-10 hover:scale-125 transition" title="Fotograma 1"></button>
+                <button onclick="jumpToFrame(2)" class="flash-kf w-4 h-4 rounded-full bg-slate-700 border-2 border-slate-950 relative z-10 hover:scale-125 transition" title="Fotograma 2"></button>
+                <button onclick="jumpToFrame(3)" class="flash-kf w-4 h-4 rounded-full bg-slate-700 border-2 border-slate-950 relative z-10 hover:scale-125 transition" title="Fotograma 3"></button>
+                <button onclick="jumpToFrame(4)" class="flash-kf w-4 h-4 rounded-full bg-slate-700 border-2 border-slate-950 relative z-10 hover:scale-125 transition" title="Fotograma 4"></button>
+              </div>
+              
+              <div class="font-mono text-2xs text-slate-400">
+                FRAME: <span id="lbl-flash-frame" class="text-white">1</span>/4
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PYTHON IDE & CALCULATOR CONTAINER -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT: CALCULADORA DE OCUPACIÓN SOLAR (5/12 cols) -->
+        <div class="lg:col-span-5 card glass-panel p-6 rounded-2xl space-y-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold font-display text-white">Calculadora de Ocupación</h3>
+              <span class="px-2 py-0.5 text-2xs font-mono rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Techo L</span>
+            </div>
+            
+            <!-- Mini Canvas Preview -->
+            <div class="w-full bg-slate-950/60 rounded-xl border border-white/5 p-4 flex items-center justify-center">
+              <canvas id="calcCanvas" width="220" height="220" class="max-w-full block aspect-square rounded-lg"></canvas>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Inputs -->
+            <div>
+              <label for="slider-calc-angle" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-display">
+                Ángulo de Inclinación ($\theta$): <span id="lbl-calc-angle" class="text-cyan-400 font-mono text-xs ml-2">15°</span>
+              </label>
+              <input id="slider-calc-angle" type="range" min="0" max="90" value="15" class="w-full accent-cyan-400 bg-slate-900 rounded-lg appearance-none h-1.5 cursor-pointer">
+            </div>
+
+            <div>
+              <label for="slider-calc-side" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-display">
+                Lado del Panel L (m): <span id="lbl-calc-side" class="text-amber-400 font-mono text-xs ml-2">1.2 m</span>
+              </label>
+              <input id="slider-calc-side" type="range" min="8" max="25" value="12" class="w-full accent-amber-400 bg-slate-900 rounded-lg appearance-none h-1.5 cursor-pointer">
+            </div>
+
+            <div>
+              <label for="input-calc-area" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 font-display">
+                Área Deseada A (m²)
+              </label>
+              <input id="input-calc-area" type="number" value="64" class="w-full px-3 py-1.5 rounded-lg text-xs font-mono font-bold glass-input text-white" readonly>
+            </div>
+
+            <!-- Stats Output Cards (Offshore Style) -->
+            <div class="space-y-2 pt-2">
+              <div class="flex justify-between items-center p-2.5 rounded-lg bg-slate-950/45 border border-white/5">
+                <span class="text-xs text-slate-400">Área Muerta ($A_m$)</span>
+                <span id="calc-dead" class="text-xs font-bold font-mono text-rose-400">0.00 m²</span>
+              </div>
+              <div class="flex justify-between items-center p-2.5 rounded-lg bg-slate-950/45 border border-white/5">
+                <span class="text-xs text-slate-400">Área Útil ($A_{util}$)</span>
+                <span id="calc-util" class="text-xs font-bold font-mono text-cyan-400">0.00 m²</span>
+              </div>
+              <div class="flex justify-between items-center p-2.5 rounded-lg bg-slate-950/45 border border-white/5">
+                <span class="text-xs text-slate-400">Eficiencia Espacial</span>
+                <span id="calc-eff" class="text-xs font-bold font-mono text-emerald-400">0.0%</span>
+              </div>
+              <div class="flex justify-between items-center p-2.5 rounded-lg bg-slate-950/45 border border-white/5">
+                <span class="text-xs text-slate-400">Paneles Estimados</span>
+                <span id="calc-panels" class="text-xs font-bold font-mono text-amber-400">0</span>
+              </div>
+              <div class="flex justify-between items-center p-2.5 rounded-lg bg-slate-950/45 border border-white/5">
+                <span class="text-xs text-slate-400">Potencia Estimada</span>
+                <span id="calc-power" class="text-xs font-bold font-mono text-violet-400">0.0 kWp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: PYTHON IDE & CONSOLE (7/12 cols) -->
+        <div class="lg:col-span-7 card glass-panel p-6 rounded-2xl space-y-4 flex flex-col justify-between">
+          <div class="flex justify-between items-center flex-wrap gap-4">
+            <h3 class="text-lg font-bold font-display text-white"><i class="fa-solid fa-code text-cyan-400"></i> Código Python Generado</h3>
+            <button class="inf-btn" onclick="showInfoModal('estabilidad')" title="Objetivo Didáctico-Técnico">inf</button>
+          </div>
+
+          <div class="space-y-3">
+            <div class="ide-topbar bg-slate-950/80 px-4 py-2 rounded-t-xl border border-white/10 flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="flash-dot bg-rose-500"></span>
+                <span class="flash-dot bg-amber-500"></span>
+                <span class="flash-dot bg-emerald-500"></span>
+              </div>
+              <span class="text-2xs font-mono text-slate-400">solar_optimizer.py</span>
+            </div>
+            <textarea id="pyCode" class="w-full h-60 bg-slate-950 text-slate-300 font-mono text-xs p-4 rounded-b-xl border-x border-b border-white/10 focus:outline-none focus:border-cyan-400/50 leading-relaxed"># ===== PARÁMETROS GEOMÉTRICOS =====
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+lado_panel = 1.2   # metros
+theta = 15         # grados de inclinación grilla
+area_techo = 64.0  # m2
+
+# Vértices del techo en L
+roof_x = [2, 10, 10, 6, 6, 2, 2]
+roof_y = [2, 2, 6, 6, 10, 10, 2]
+
+# Inicializar figura de Matplotlib
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5))
+fig.patch.set_facecolor('#040914')
+
+# --- SUBGRAFICO 1: Planta del Techo en L ---
+ax1.set_facecolor('#040914')
+ax1.plot(roof_x, roof_y, color='#02f3e6', linewidth=2, label="Límite Techo L")
+ax1.fill(roof_x, roof_y, color='#0a1e3f', alpha=0.5)
+
+# Centro de rotación
+cx, cy = 6, 6
+rad = math.radians(theta)
+cos_t, sin_t = math.cos(rad), math.sin(rad)
+
+# Helper function to draw rotated panel polygons
+def draw_rotated_panel(ax, px, py, L, angle_deg, color, alpha):
+    r = math.radians(angle_deg)
+    c, s = math.cos(r), math.sin(r)
+    h = L / 2
+    local_verts = [(-h, -h), (h, -h), (h, h), (-h, h)]
+    global_verts = []
+    for lx, ly in local_verts:
+        gx = px + lx * c - ly * s
+        gy = py + lx * s + ly * c
+        global_verts.append((gx, gy))
+    polygon = patches.Polygon(global_verts, closed=True, facecolor=color, edgecolor=color, alpha=alpha)
+    ax.add_patch(polygon)
+
+# Generar paneles e insertarlos
+step = lado_panel + 0.1
+for x_loc in np.arange(-8, 8, step):
+    for y_loc in np.arange(-8, 8, step):
+        x_rot = cx + x_loc * cos_t - y_loc * sin_t
+        y_rot = cy + x_loc * sin_t + y_loc * cos_t
+        
+        in_L = (2 <= x_rot < 6 and 2 <= y_rot < 10) or (6 <= x_rot < 10 and 2 <= y_rot < 6)
+        near_corner = (5.8 <= x_rot < 6.4 and 5.8 <= y_rot < 6.4)
+        
+        if in_L:
+            color = '#ff4d6d' if near_corner else '#ffb703'
+            alpha = 0.5 if near_corner else 0.8
+            draw_rotated_panel(ax1, x_rot, y_rot, lado_panel, theta, color, alpha)
+
+ax1.set_xlim(0, 12)
+ax1.set_ylim(0, 12)
+ax1.grid(color='#1e293b', linestyle='--', linewidth=0.5)
+ax1.set_title(f'Distribución Solar (theta={theta}°)', color='white', fontsize=11, fontweight='bold')
+ax1.tick_params(colors='white')
+for spine in ax1.spines.values():
+    spine.set_color('#1e293b')
+
+# --- SUBGRAFICO 2: Comparación de Eficiencia ---
+ax2.set_facecolor('#040914')
+
+def calc_eff(ang):
+    r_a = math.radians(ang)
+    if ang > 0 and ang < 90:
+        am = (lado_panel ** 2) / math.sin(2 * r_a)
+        if am > 15: am = 15
+    else:
+        am = lado_panel ** 2 * 1.5
+    remanente = 64.0 * (0.12 + abs(math.sin(2 * r_a)) * 0.15)
+    f_dead = am + remanente * (lado_panel * 0.35)
+    return ((64.0 - f_dead) / 64.0) * 100
+
+scenarios = ['0°', '45°', f'{theta}°']
+effs = [calc_eff(0), calc_eff(45), calc_eff(theta)]
+colors = ['#ff4d6d', '#02f3e6', '#ffb703']
+
+bars = ax2.bar(scenarios, effs, color=colors, edgecolor='white', width=0.5, alpha=0.85)
+
+for bar in bars:
+    height = bar.get_height()
+    ax2.annotate(f'{height:.1f}%',
+                xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 3),
+                textcoords="offset points",
+                ha='center', va='bottom', color='white', fontsize=9)
+
+ax2.set_ylim(0, 110)
+ax2.set_title('Comparación de Eficiencia', color='white', fontsize=11, fontweight='bold')
+ax2.tick_params(colors='white')
+for spine in ax2.spines.values():
+    spine.set_color('#1e293b')
+
+plt.tight_layout()
+plt.show()
+
+# Imprimir resultados en consola
+dead_val = 64.0 - (calc_eff(theta) * 64.0 / 100.0)
+print(f"--- SOLAR-MESH 2D OPTIMIZER ---")
+print(f"Área Muerta Esquina: {dead_val:.4f} m²")
+print(f"Eficiencia Espacial: {calc_eff(theta):.2f} %")
+</textarea>
+            
+            <div class="flex gap-2">
+              <button onclick="runPython()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-display rounded-lg transition"><i class="fa-solid fa-play"></i> Ejecutar Script</button>
+              <button onclick="copyPythonCode()" id="copyPyBtn" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs font-display rounded-lg border border-white/10 transition"><i class="fa-solid fa-copy"></i> Copiar Código</button>
+              <button onclick="resetPython()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs font-display rounded-lg border border-white/10 transition"><i class="fa-solid fa-rotate-left"></i> Restablecer</button>
+            </div>
+          </div>
+
+          <!-- Console & Matplotlib block -->
+          <div class="flex flex-col">
+            <div class="ide-topbar bg-slate-950/80 px-4 py-2 rounded-t-xl border border-white/10">
+              <span class="text-2xs font-mono text-slate-400">Consola de Salida</span>
+            </div>
+            <div class="bg-slate-950/40 border-x border-b border-white/10 p-4 rounded-b-xl flex flex-col justify-start">
+              <canvas id="matplotCanvas" width="550" height="260" style="display:none;margin:0 auto 16px;max-width:100%;border-radius:12px;"></canvas>
+              <pre id="pyConsole" class="w-full font-mono text-xs text-cyan-400 overflow-y-auto whitespace-pre-wrap max-h-36">▶ Listo para ejecución. Presione 'Ejecutar Script'...</pre>
+            </div>
+          </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Solar Ray Force Distribution Swf Mockup -->
+      <div class="glass-panel p-0 rounded-2xl border border-white/10 overflow-hidden bg-slate-950/80 shadow-2xl">
+        <!-- Mac Window Header Bar -->
+        <div class="bg-slate-900 px-4 py-2.5 flex items-center border-b border-white/5 relative">
+          <div class="flex gap-1.5 z-10">
+            <span class="w-3 h-3 rounded-full bg-rose-500 block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500 block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500 block"></span>
+          </div>
+          <div class="absolute inset-0 flex justify-center items-center text-3xs font-mono text-slate-400 tracking-wide">
+            solar_ray_forces.swf [HTML5 Canvas] — Distribución vectorial de radiación
+          </div>
+        </div>
+
+        <!-- Simulator Content -->
+        <div class="p-6 space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Viewport: L-Roof -->
+            <div class="space-y-3">
+              <div class="bg-slate-950/90 border border-cyan-500/20 p-3 rounded-lg font-mono text-2xs space-y-0.5">
+                <div class="text-cyan-400 font-bold">Caso 1: Techo en L (No Convexo)</div>
+                <div class="text-slate-400">Pérdida por Bordes: <span id="comp-l-loss" class="text-rose-400 font-bold">23.5%</span> | Desviación de Carga: <span class="text-amber-400">41.2%</span></div>
+              </div>
+              <div class="bg-slate-950/60 rounded-xl border border-white/5 p-4 flex justify-center items-center relative aspect-square max-h-[300px] mx-auto w-full">
+                <canvas id="compCanvasL" class="w-full h-full block cursor-crosshair"></canvas>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-white/5 font-mono text-3xs text-center space-y-1">
+                <div class="text-rose-400 font-bold">Distribución: ⚠ DISCONTINUA (Sombras Cóncavas)</div>
+                <div class="text-slate-400">Ángulo Solar: <span id="comp-l-lbl-beta">45°</span> | Caso de Estudio</div>
+              </div>
+            </div>
+
+            <!-- Right Viewport: Rect-Roof -->
+            <div class="space-y-3">
+              <div class="bg-slate-950/90 border border-emerald-500/20 p-3 rounded-lg font-mono text-2xs space-y-0.5">
+                <div class="text-emerald-400 font-bold">Caso 2: Techo Rectangular (Convexo)</div>
+                <div class="text-slate-400">Pérdida por Bordes: <span id="comp-rect-loss" class="text-emerald-400 font-bold">0.0%</span> | Desviación de Carga: <span class="text-emerald-400 font-bold">0.0% (Homogénea)</span></div>
+              </div>
+              <div class="bg-slate-950/60 rounded-xl border border-white/5 p-4 flex justify-center items-center relative aspect-square max-h-[300px] mx-auto w-full">
+                <canvas id="compCanvasRect" class="w-full h-full block cursor-crosshair"></canvas>
+              </div>
+              <div class="bg-slate-900/60 p-3 rounded-lg border border-white/5 font-mono text-3xs text-center space-y-1">
+                <div class="text-emerald-400 font-bold">Distribución: ✓ HOMOGÉNEA (Bajo Estrés de Borde)</div>
+                <div class="text-slate-400">Ángulo Solar: <span id="comp-rect-lbl-beta">45°</span> | Caso Referencial</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Control Bar -->
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <button id="btn-play-comp" class="px-5 py-2.5 rounded-xl border border-cyan-400/25 hover:border-cyan-400 text-2xs font-bold tracking-widest font-display text-cyan-400 bg-cyan-950/20 uppercase flex items-center gap-2 transition duration-200">
+                <i class="fa-solid fa-play" id="btn-play-comp-icon"></i> <span id="btn-play-comp-text">Iniciar</span>
+              </button>
+            </div>
+            
+            <div class="flex-1 max-w-md w-full">
+              <label for="slider-comp-beta" class="block text-3xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-display">
+                Ángulo solar $\beta$ (°): <span id="lbl-comp-beta" class="text-cyan-400 font-mono text-xs ml-1">45°</span>
+              </label>
+              <input id="slider-comp-beta" type="range" min="15" max="90" value="45" class="w-full accent-cyan-400 bg-slate-900 rounded-lg appearance-none h-1.5 cursor-pointer">
+            </div>
+
+            <div class="flex items-center gap-4">
+              <span class="text-3xs font-mono text-slate-400">Techo: <span class="text-cyan-400">L-Roof vs Rectangular</span></span>
+              <button id="btn-reset-comp" class="px-5 py-2.5 rounded-xl border border-rose-500/25 hover:border-rose-500 text-2xs font-bold tracking-widest font-display text-rose-400 bg-rose-950/20 uppercase flex items-center gap-2 transition duration-200">
+                <i class="fa-solid fa-rotate-left"></i> Reiniciar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER ACTION STRIP -->
+  <footer class="w-full max-w-7xl mx-auto px-4 pb-6">
+    <div class="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+      <div>
+        <p class="text-xs font-bold text-white tracking-wider font-display uppercase">
+          PROYECTO DE INVESTIGACIÓN EDUCATIVA APLICADA
+        </p>
+        <p class="text-2xs text-slate-400 font-mono mt-0.5">
+          Optimización Geométrica de Energías Renovables • Santa Elena 2026
+        </p>
+      </div>
+      <div>
+        <button class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs tracking-widest font-display shadow-lg shadow-amber-500/10 transition duration-300" onclick="triggerA1Report()">
+          GENERAR REPORTE DE TRIANGULACIÓN
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- INFO POPUPS MODAL SYSTEM -->
+  <div id="infoModalOverlay" class="info-modal-overlay">
+    <div class="info-modal">
+      <div class="info-modal-header">
+        <div class="info-modal-title" id="infoModalTitle">Objetivo Didáctico</div>
+        <button class="info-modal-close" onclick="closeInfoModal()">&times;</button>
+      </div>
+      <div class="info-modal-body" id="infoModalBody">
+        Contenido del objetivo...
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX OVERLAY FOR FLASH SLIDES -->
+  <div id="flashLightbox" class="info-modal-overlay" onclick="closeFlashLightbox()">
+    <div class="info-modal max-w-2xl bg-slate-950/95 border border-cyan-500/20 flex flex-col items-center p-4 relative" onclick="event.stopPropagation()">
+      <div class="info-modal-header w-full flex justify-between items-center mb-3">
+        <div class="info-modal-title">Ilustración del Fotograma</div>
+        <button class="info-modal-close" onclick="closeFlashLightbox()">&times;</button>
+      </div>
+      <img id="lightboxImg" src="" class="w-full aspect-video object-contain rounded-lg border border-white/10 shadow-2xl">
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT LOGIC -->
+  <script>
+    // State Variables
+    let currentAngle = 15;
+    let panelSide = 1.2;
+    let solarElevation = 45; // Beta angle (Solar altitude)
+    let panelTilt = 15; // Panel mounting tilt angle
+    let showTriangulation = false;
+    let flashInterval = null;
+    let currentFrame = 1;
+    let slideAudioEnabled = true;
+
+    // L-shaped roof coordinates (V1-V6) in meters
+    const roofBasePoly = [
+      {x: 2, y: 2},
+      {x: 10, y: 2},
+      {x: 10, y: 6},
+      {x: 6, y: 6},
+      {x: 6, y: 10},
+      {x: 2, y: 10}
+    ];
+
+    // Helper function to check if a point (x,y) is inside L-roof boundaries
+    function isInsideLRoof(x, y, margin = 0.05) {
+      // Part 1: x in [2, 6] & y in [2, 10]
+      const inPart1 = (x >= 2 + margin && x <= 6 + margin && y >= 2 + margin && y <= 10 - margin);
+      // Part 2: x in [6, 10] & y in [2, 6]
+      const inPart2 = (x >= 6 - margin && x <= 10 - margin && y >= 2 + margin && y <= 6 + margin);
+      return inPart1 || inPart2;
+    }
+
+    // Helper to check if all four corners of a panel fit inside the L-roof
+    function doesPanelFit(rx, ry, L, rad) {
+      const h = L / 2;
+      const cosVal = Math.cos(rad);
+      const sinVal = Math.sin(rad);
+      const corners = [
+        {x: -h, y: -h},
+        {x: h, y: -h},
+        {x: h, y: h},
+        {x: -h, y: h}
+      ];
+      for (let c of corners) {
+        const gx = rx + c.x * cosVal - c.y * sinVal;
+        const gy = ry + c.x * sinVal + c.y * cosVal;
+        if (!isInsideLRoof(gx, gy, 0.02)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Info Modal content for all components
+    const infoData = {
+      contexto: {
+        title: "Objetivo: Contexto y Rotación de Malla",
+        html: `<p><strong>Objetivo Didáctico-Técnico:</strong></p>
+               <p>Ilustrar cómo la no convexidad espacial en viviendas de Santa Elena altera la colocación de rejillas ortogonales convencionales.</p>
+               <p>El uso del narrador permite guiar al estudiante en la comprensión de las pérdidas espaciales en las esquinas de los edificios en forma de L sin necesidad de recurrir a costosas herramientas de cálculo tridimensional.</p>`
+      },
+      transversal: {
+        title: "Objetivo: Deducción del Modelo Matemático",
+        html: `<p><strong>Objetivo Didáctico-Técnico:</strong></p>
+               <p>Estudiar de forma analítica las holguras en vértices entrantes y la proyección trigonométrica de las sombras.</p>
+               <p>Modelar el área muerta como $A_m = L^2 / \\sin(2\\theta)$ permite deducir el comportamiento asintótico en los ángulos de alineación. El cálculo de separación entre filas $D$ enseña a optimizar la relación entre el área útil y las pérdidas por sombra mutua (autotrabamiento).</p>`
+      },
+      oleaje: {
+        title: "Objetivo: Laboratorio Métrico 2D",
+        html: `<p><strong>Objetivo Didáctico-Técnico:</strong></p>
+               <p>Visualizar el plano de distribución de módulos fotovoltaicos, exclusiones perimetrales y sombras en 2D.</p>
+               <p>Demuestra al estudiante qué paneles se descartan (rojos) por colisión con el perímetro no convexo. Dibuja las áreas de sombras (gradientes oscuros detrás de los paneles) variando según la altura del sol, demostrando la distancia mínima de holgura.</p>`
+      },
+      isotropia: {
+        title: "Objetivo: Gemelo Digital Estructural 3D",
+        html: `<p><strong>Objetivo Didáctico-Técnico:</strong></p>
+               <p>Experimentar tridimensionalmente con la incidencia de los rayos solares y las sombras arrojadas.</p>
+               <p>Permite orbitar libremente y observar la inclinación física de los paneles solares. La luz solar 3D proyecta sombras dinámicas sobre el plano del techo, ilustrando de manera realista la física de la instalación solar y las pérdidas por sombreado a diferentes horas del día.</p>`
+      },
+      impacto: {
+        title: "Objetivo: Exportación SIG y Línea de Tiempo",
+        html: `<p><strong>Objetivo Didáctico-Técnico:</strong></p>
+               <p>Aprender la integración práctica del diseño geométrico con herramientas georreferenciadas y de maquetación.</p>
+               <p>La exportación a GeoJSON introduce el concepto de coordenadas espaciales vectoriales compatibles con QGIS. El plano A1 y el emulador de diapositivas Flash enseñan a documentar y defender el proyecto técnico de forma secuencial y didáctica.</p>`
+      },
+      estabilidad: {
+        title: "Objetivo: Consola Interactiva Python",
+        html: `<p><strong>Objetivo Didáctico-Técnico:</strong></p>
+               <p>Introducir el análisis algorítmico y computacional en la ingeniería solar mediante la ejecución de scripts.</p>
+               <p>Permite a los estudiantes editar y ejecutar variables directamente en el navegador, calculando de manera exacta los porcentajes de ocupación e introduciendo la automatización de procesos en el diseño fotovoltaico real.</p>`
+      }
+    };
+
+    // Flash timeline slide contents
+    const flashSlides = {
+      1: { title: "1. Morfología de Techos en Santa Elena", desc: "La mayoría de las cubiertas residenciales presentan formas de polígonos no convexos debido a retiros arquitectónicos de patios y ductos de iluminación." },
+      2: { title: "2. Comportamiento del Vértice Entrante", desc: "El punto interior cóncavo genera intersecciones ortogonales que rompen la continuidad del tendido de paneles solares tradicionales." },
+      3: { title: "3. Optimización por Rotación Métrica", desc: "Variando el ángulo geométrico theta de la cuadrícula base, es posible reducir las pérdidas perimetrales en más de un 18% espacial." },
+      4: { title: "4. Maquetación Física Sincronizada", desc: "La matriz resultante genera líneas de triangulación para fabricar el plano impreso a escala A1 exacta sin necesidad de software CAD." }
+    };
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      // Render LaTeX formulas in document body including inline dollar signs
+      if (typeof renderMathInElement === 'function') {
+        renderMathInElement(document.body, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
+        });
+      }
+
+      initSliders();
+      initCanvas2D();
+      initCalcCanvas();
+      initRayCanvas();
+      initCompCanvas();
+      initThree3D();
+      jumpToFrame(1);
+      updateOutputs();
+    });
+
+    // Navigation Tab Switching
+    function switchTab(button, targetPanelId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.setAttribute('aria-selected', 'false'));
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('block');
+        content.classList.add('hidden');
+      });
+
+      button.setAttribute('aria-selected', 'true');
+      document.getElementById(targetPanelId).classList.remove('hidden');
+      document.getElementById(targetPanelId).classList.add('block');
+
+      // Trigger resize for ThreeJS viewport when tab is activated
+      if (targetPanelId === 'panel-simulacion' && window.triggerThreeResize) {
+        window.triggerThreeResize();
+      }
+    }
+
+    // Modal popup helper methods
+    function showInfoModal(type) {
+      const data = infoData[type];
+      if (!data) return;
+      document.getElementById('infoModalTitle').textContent = data.title;
+      document.getElementById('infoModalBody').innerHTML = data.html;
+      
+      if(typeof renderMathInElement === 'function') {
+        renderMathInElement(document.getElementById('infoModalBody'), { delimiters: [
+          {left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},
+          {left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}
+        ]});
+      }
+      
+      document.getElementById('infoModalOverlay').classList.add('active');
+    }
+
+    function closeInfoModal() {
+      document.getElementById('infoModalOverlay').classList.remove('active');
+    }
+
+    // Click outside modal closes it
+    document.getElementById('infoModalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('infoModalOverlay')) closeInfoModal();
+    });
+
+    // Initialize UI parameter sliders
+    function initSliders() {
+      const sAngle = document.getElementById('slider-angle');
+      const sSide = document.getElementById('slider-side');
+      const sSun = document.getElementById('slider-sun');
+      const btnTri = document.getElementById('btn-triangulate');
+
+      const sCalcAngle = document.getElementById('slider-calc-angle');
+      const sCalcSide = document.getElementById('slider-calc-side');
+
+      sAngle.addEventListener('input', (e) => {
+        currentAngle = parseInt(e.target.value);
+        document.getElementById('lbl-angle').innerText = currentAngle + '°';
+        updateOutputs();
+      });
+
+      sSide.addEventListener('input', (e) => {
+        panelSide = parseFloat(e.target.value) / 10;
+        document.getElementById('lbl-side').innerText = panelSide.toFixed(1) + ' m';
+        updateOutputs();
+      });
+
+      sSun.addEventListener('input', (e) => {
+        solarElevation = parseInt(e.target.value);
+        document.getElementById('lbl-sun').innerText = solarElevation + '°';
+        updateOutputs();
+      });
+
+      sCalcAngle.addEventListener('input', (e) => {
+        currentAngle = parseInt(e.target.value);
+        document.getElementById('slider-angle').value = currentAngle;
+        document.getElementById('lbl-angle').innerText = currentAngle + '°';
+        document.getElementById('lbl-calc-angle').innerText = currentAngle + '°';
+        updateOutputs();
+      });
+
+      sCalcSide.addEventListener('input', (e) => {
+        panelSide = parseFloat(e.target.value) / 10;
+        document.getElementById('slider-side').value = e.target.value;
+        document.getElementById('lbl-side').innerText = panelSide.toFixed(1) + ' m';
+        document.getElementById('lbl-calc-side').innerText = panelSide.toFixed(1) + ' m';
+        updateOutputs();
+      });
+
+      if (btnTri) {
+        btnTri.addEventListener('click', () => {
+          showTriangulation = !showTriangulation;
+          btnTri.innerText = `TRIANGULACIÓN: ${showTriangulation ? 'ENCENDIDA' : 'APAGADA'}`;
+          btnTri.style.borderColor = showTriangulation ? 'var(--secondary-neon)' : 'rgba(255,255,255,0.1)';
+          updateOutputs();
+        });
+      }
+
+      // Play/Pause auto-rotation animation
+      let rotationInterval = null;
+      let isRotatingSim = false;
+      const btnPlay = document.getElementById('btn-play-rotation');
+      const btnPlayIcon = document.getElementById('btn-play-icon');
+      const btnPlayText = document.getElementById('btn-play-text');
+      const btnReset = document.getElementById('btn-reset-sim');
+
+      function toggleRotation() {
+        if (isRotatingSim) {
+          clearInterval(rotationInterval);
+          isRotatingSim = false;
+          btnPlayIcon.className = 'fa-solid fa-play';
+          btnPlayText.innerText = 'Iniciar Rotación';
+          btnPlay.style.borderColor = 'rgba(2, 243, 230, 0.25)';
+          btnPlay.style.color = '#02f3e6';
+        } else {
+          isRotatingSim = true;
+          btnPlayIcon.className = 'fa-solid fa-pause';
+          btnPlayText.innerText = 'Pausar Rotación';
+          btnPlay.style.borderColor = '#ffb703';
+          btnPlay.style.color = '#ffb703';
+
+          rotationInterval = setInterval(() => {
+            let nextAngle = currentAngle + 1;
+            if (nextAngle > 90) nextAngle = 0;
+            currentAngle = nextAngle;
+            
+            document.getElementById('slider-angle').value = currentAngle;
+            document.getElementById('lbl-angle').innerText = currentAngle + '°';
+            document.getElementById('slider-calc-angle').value = currentAngle;
+            document.getElementById('lbl-calc-angle').innerText = currentAngle + '°';
+            
+            updateOutputs();
+          }, 100);
+        }
+      }
+
+      btnPlay.addEventListener('click', toggleRotation);
+
+      btnReset.addEventListener('click', () => {
+        if (isRotatingSim) toggleRotation();
+        
+        currentAngle = 15;
+        panelSide = 1.2;
+        solarElevation = 45;
+
+        document.getElementById('slider-angle').value = 15;
+        document.getElementById('lbl-angle').innerText = '15°';
+        document.getElementById('slider-side').value = 12;
+        document.getElementById('lbl-side').innerText = '1.2 m';
+        document.getElementById('slider-sun').value = 45;
+        document.getElementById('lbl-sun').innerText = '45°';
+
+        updateOutputs();
+      });
+    }
+
+    // Compute metrics & update layout
+    function updateOutputs() {
+      const totalArea = 64.0;
+      const rad = (currentAngle * Math.PI) / 180;
+      const cosVal = Math.cos(rad);
+      const sinVal = Math.sin(rad);
+
+      // Count actual panels fitting the L-roof
+      let panelCount = 0;
+      const step = panelSide + 0.1; // grid step (including gap)
+      for (let u = -8; u <= 8; u += step) {
+        for (let v = -8; v <= 8; v += step) {
+          const rx = 6 + u * cosVal - v * sinVal;
+          const ry = 6 + u * sinVal + v * cosVal;
+          const inL = doesPanelFit(rx, ry, panelSide, rad);
+          const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+          if (inL && !nearCorner) {
+            panelCount++;
+          }
+        }
+      }
+
+      // Calculate active and dead areas based on actual fitting panels
+      const panelArea = panelSide * panelSide;
+      const activeArea = panelCount * panelArea;
+      const roofGeometricArea = 48.0; // exact area of the L-roof
+      const finalDeadArea = roofGeometricArea - activeArea;
+      const efficiency = (activeArea / roofGeometricArea) * 100;
+
+      document.getElementById('hero-panel-count').innerText = panelCount;
+      document.getElementById('hero-deadarea').innerText = finalDeadArea.toFixed(2) + ' m²';
+
+      document.getElementById('table-angle-val').innerText = currentAngle + '.0°';
+      document.getElementById('table-dead-val').innerText = finalDeadArea.toFixed(2) + ' m²';
+      document.getElementById('table-eff-val').innerText = efficiency.toFixed(1) + '%';
+
+      // Count actual panels fitting the L-roof at 45 degrees
+      let panelCount45 = 0;
+      const cos45 = Math.cos(Math.PI / 4);
+      const sin45 = Math.sin(Math.PI / 4);
+      for (let u = -8; u <= 8; u += step) {
+        for (let v = -8; v <= 8; v += step) {
+          const rx = 6 + u * cos45 - v * sin45;
+          const ry = 6 + u * sin45 + v * cos45;
+          const inL = doesPanelFit(rx, ry, panelSide, Math.PI / 4);
+          const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+          if (inL && !nearCorner) {
+            panelCount45++;
+          }
+        }
+      }
+      const activeArea45 = panelCount45 * panelArea;
+      const dead45 = roofGeometricArea - activeArea45;
+      const eff45 = (activeArea45 / roofGeometricArea) * 100;
+
+      document.getElementById('table-dead-45').innerText = dead45.toFixed(2) + ' m²';
+      document.getElementById('table-eff-45').innerText = eff45.toFixed(1) + '%';
+
+      // Update Calculator card outputs
+      document.getElementById('calc-dead').innerText = finalDeadArea.toFixed(2) + ' m²';
+      document.getElementById('calc-util').innerText = activeArea.toFixed(2) + ' m²';
+      document.getElementById('calc-eff').innerText = efficiency.toFixed(1) + '%';
+      document.getElementById('calc-panels').innerText = panelCount;
+      document.getElementById('calc-power').innerText = (panelCount * 0.35).toFixed(1) + ' kWp';
+
+      // Update Calculator card inputs and labels
+      document.getElementById('slider-calc-angle').value = currentAngle;
+      document.getElementById('lbl-calc-angle').innerText = currentAngle + '°';
+      document.getElementById('slider-calc-side').value = Math.round(panelSide * 10);
+      document.getElementById('lbl-calc-side').innerText = panelSide.toFixed(1) + ' m';
+
+      // Update Large Glowing Metric Cards
+      document.getElementById('card-panels-val').innerText = panelCount;
+      document.getElementById('card-dead-val').innerText = finalDeadArea.toFixed(2) + ' m²';
+      document.getElementById('card-util-val').innerText = activeArea.toFixed(2) + ' m²';
+      document.getElementById('card-eff-val').innerText = efficiency.toFixed(1) + '%';
+      document.getElementById('card-power-val').innerText = (panelCount * 0.35).toFixed(1) + ' kWp';
+
+      const statusEl = document.getElementById('card-status-val');
+      if (efficiency >= 60) {
+        statusEl.innerText = '✓ ÓPTIMO';
+        statusEl.className = 'text-2xs font-bold font-display px-2 py-1.5 rounded-lg border bg-emerald-500/10 border-emerald-500/50 text-emerald-400';
+      } else {
+        statusEl.innerText = '⚠ MEJORABLE';
+        statusEl.className = 'text-2xs font-bold font-display px-2 py-1.5 rounded-lg border bg-amber-500/10 border-amber-500/50 text-amber-400';
+      }
+
+      // Update script editor values dynamically
+      document.getElementById('pyCode').value = `# ===== PARÁMETROS GEOMÉTRICOS =====
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+lado_panel = ${panelSide.toFixed(1)}   # metros
+theta = ${currentAngle}         # grados de inclinación grilla
+area_techo = 48.0  # m2 (Área del techo en L)
+
+# Vértices del techo en L
+roof_x = [2, 10, 10, 6, 6, 2, 2]
+roof_y = [2, 2, 6, 6, 10, 10, 2]
+
+# Inicializar figura de Matplotlib
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5))
+fig.patch.set_facecolor('#040914')
+
+# --- SUBGRAFICO 1: Planta del Techo en L ---
+ax1.set_facecolor('#040914')
+ax1.plot(roof_x, roof_y, color='#02f3e6', linewidth=2, label="Límite Techo L")
+ax1.fill(roof_x, roof_y, color='#0a1e3f', alpha=0.5)
+
+# Centro de rotación
+cx, cy = 6, 6
+rad = math.radians(theta)
+cos_t, sin_t = math.cos(rad), math.sin(rad)
+
+# Helper to check if a point is inside the L-roof
+def is_inside_l_roof(x, y, margin=0.02):
+    in_part1 = (2 + margin <= x <= 6 + margin) and (2 + margin <= y <= 10 - margin)
+    in_part2 = (6 - margin <= x <= 10 - margin) and (2 + margin <= y <= 6 + margin)
+    return in_part1 or in_part2
+
+# Helper to check if all four corners of a panel fit inside the L-roof
+def does_panel_fit(px, py, L, angle_deg):
+    r = math.radians(angle_deg)
+    c, s = math.cos(r), math.sin(r)
+    h = L / 2
+    local_verts = [(-h, -h), (h, -h), (h, h), (-h, h)]
+    for lx, ly in local_verts:
+        gx = px + lx * c - ly * s
+        gy = py + lx * s + ly * c
+        if not is_inside_l_roof(gx, gy, 0.02):
+            return False
+    return True
+
+# Helper function to draw rotated panel polygons
+def draw_rotated_panel(ax, px, py, L, angle_deg, color, alpha):
+    r = math.radians(angle_deg)
+    c, s = math.cos(r), math.sin(r)
+    h = L / 2
+    local_verts = [(-h, -h), (h, -h), (h, h), (-h, h)]
+    global_verts = []
+    for lx, ly in local_verts:
+        gx = px + lx * c - ly * s
+        gy = py + lx * s + ly * c
+        global_verts.append((gx, gy))
+    polygon = patches.Polygon(global_verts, closed=True, facecolor=color, edgecolor=color, alpha=alpha)
+    ax.add_patch(polygon)
+
+# Generar paneles e insertarlos
+step = lado_panel + 0.1
+for x_loc in np.arange(-8, 8, step):
+    for y_loc in np.arange(-8, 8, step):
+        x_rot = cx + x_loc * cos_t - y_loc * sin_t
+        y_rot = cy + x_loc * sin_t + y_loc * cos_t
+        
+        in_L = does_panel_fit(x_rot, y_rot, lado_panel, theta)
+        near_corner = (5.75 <= x_rot <= 6.25 and 5.75 <= y_rot <= 6.25)
+        
+        if in_L and not near_corner:
+            draw_rotated_panel(ax1, x_rot, y_rot, lado_panel, theta, '#ffb703', 0.8)
+
+ax1.set_xlim(0, 12)
+ax1.set_ylim(0, 12)
+ax1.grid(color='#1e293b', linestyle='--', linewidth=0.5)
+ax1.set_title(f'Distribución (theta={theta}°)', color='white', fontsize=11, fontweight='bold')
+ax1.tick_params(colors='white')
+for spine in ax1.spines.values():
+    spine.set_color('#1e293b')
+
+# --- SUBGRAFICO 2: Comparación de Eficiencia ---
+ax2.set_facecolor('#040914')
+
+def calc_eff(ang):
+    r_rad = math.radians(ang)
+    c_val, s_val = math.cos(r_rad), math.sin(r_rad)
+    count = 0
+    # Loop to count panels for this angle
+    for u in np.arange(-8, 8, step):
+        for v in np.arange(-8, 8, step):
+            rx = cx + u * c_val - v * s_val
+            ry = cy + u * s_val + v * c_val
+            if does_panel_fit(rx, ry, lado_panel, ang):
+                nc = (5.75 <= rx <= 6.25 and 5.75 <= ry <= 6.25)
+                if not nc:
+                    count += 1
+    panel_area = lado_panel * lado_panel
+    active_area = count * panel_area
+    return (active_area / 48.0) * 100
+
+scenarios = ['0°', '45°', f'{theta}°']
+effs = [calc_eff(0), calc_eff(45), calc_eff(theta)]
+colors = ['#ff4d6d', '#02f3e6', '#ffb703']
+
+bars = ax2.bar(scenarios, effs, color=colors, edgecolor='white', width=0.5, alpha=0.85)
+
+for bar in bars:
+    height = bar.get_height()
+    ax2.annotate(f'{height:.1f}%',
+                xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 3),
+                textcoords="offset points",
+                ha='center', va='bottom', color='white', fontsize=9)
+
+ax2.set_ylim(0, 110)
+ax2.set_title('Comparación de Eficiencia', color='white', fontsize=11, fontweight='bold')
+ax2.tick_params(colors='white')
+for spine in ax2.spines.values():
+    spine.set_color('#1e293b')
+
+plt.tight_layout()
+plt.show()
+
+# Imprimir resultados en consola
+count_final = 0
+for u in np.arange(-8, 8, step):
+    for v in np.arange(-8, 8, step):
+        rx = cx + u * cos_t - v * sin_t
+        ry = cy + u * sin_t + v * cos_t
+        if does_panel_fit(rx, ry, lado_panel, theta):
+            nc = (5.75 <= rx <= 6.25 and 5.75 <= ry <= 6.25)
+            if not nc:
+                count_final += 1
+active_area = count_final * (lado_panel ** 2)
+dead_val = 48.0 - active_area
+eff_val = (active_area / 48.0) * 100
+print(f"--- SOLAR-MESH 2D OPTIMIZER ---")
+print(f"Paneles Activos: {count_final}")
+print(f"Área Muerta: {dead_val:.4f} m²")
+print(f"Eficiencia Espacial: {eff_val:.2f} %")`;
+
+      if (window.drawCanvas2D) window.drawCanvas2D();
+      if (window.drawCalcCanvas) window.drawCalcCanvas();
+      if (window.drawRayCanvas) window.drawRayCanvas();
+      if (window.drawCompCanvases) window.drawCompCanvases();
+      if (window.updateThreeMesh) window.updateThreeMesh();
+    }
+
+    // 2D CANVAS RENDERING
+    function initCanvas2D() {
+      const canvas = document.getElementById('canvas2d');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const scale = 40;
+      const offsetX = 50;
+      const offsetY = 50;
+
+      window.drawCanvas2D = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // draw background grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 20) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+
+        // draw L-shaped roof
+        ctx.beginPath();
+        roofBasePoly.forEach((pt, idx) => {
+          const cx = offsetX + pt.x * scale;
+          const cy = offsetY + pt.y * scale;
+          idx === 0 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(20, 32, 60, 0.6)';
+        ctx.fill();
+        ctx.strokeStyle = '#00c8ff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Draw diagonals if triangulation is on
+        if (showTriangulation) {
+          ctx.strokeStyle = 'rgba(2, 243, 230, 0.7)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([5, 4]);
+          
+          // Draw diagonal lines
+          ctx.beginPath();
+          ctx.moveTo(offsetX + 2 * scale, offsetY + 6 * scale);
+          ctx.lineTo(offsetX + 6 * scale, offsetY + 6 * scale);
+          ctx.lineTo(offsetX + 6 * scale, offsetY + 2 * scale);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          ctx.fillStyle = '#02f3e6';
+          ctx.font = 'bold 9px JetBrains Mono';
+          ctx.fillText("D1 = 5.65 m (T1)", offsetX + 2.2 * scale, offsetY + 5.7 * scale);
+        }
+
+        // Draw rotated grid panels
+        const rad = (currentAngle * Math.PI) / 180;
+        const cosVal = Math.cos(rad);
+        const sinVal = Math.sin(rad);
+        const pSize = panelSide * scale;
+        const step = panelSide + 0.1; // grid step (including gap)
+
+        for (let u = -8; u <= 8; u += step) {
+          for (let v = -8; v <= 8; v += step) {
+            // Rotate grid relative to pivot (6, 6)
+            const rx = 6 + u * cosVal - v * sinVal;
+            const ry = 6 + u * sinVal + v * cosVal;
+
+            const inL = isInsideLRoof(rx, ry, 0.05);
+            const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+
+            if (inL) {
+              const scrX = offsetX + rx * scale;
+              const scrY = offsetY + ry * scale;
+
+              ctx.save();
+              ctx.translate(scrX, scrY);
+              ctx.rotate(rad);
+
+              if (nearCorner) {
+                ctx.fillStyle = 'rgba(255, 77, 109, 0.25)'; // collision red
+                ctx.strokeStyle = 'rgba(255, 77, 109, 0.6)';
+              } else {
+                ctx.fillStyle = 'rgba(255, 183, 3, 0.15)'; // active gold
+                ctx.strokeStyle = 'rgba(255, 183, 3, 0.5)';
+              }
+
+              ctx.fillRect(-pSize / 2, -pSize / 2, pSize, pSize);
+              ctx.strokeRect(-pSize / 2, -pSize / 2, pSize, pSize);
+
+              // ── DRAW ROW SHADOWS (based on solar angle) ──
+              if (solarElevation < 90) {
+                const shadowLen = pSize * (1 / Math.tan((solarElevation * Math.PI) / 180));
+                ctx.fillStyle = 'rgba(2, 10, 24, 0.45)';
+                ctx.fillRect(-pSize / 2, pSize / 2, pSize, shadowLen);
+              }
+              ctx.restore();
+            }
+          }
+        }
+
+        // draw entry corner dot
+        ctx.beginPath();
+        ctx.arc(offsetX + 6 * scale, offsetY + 6 * scale, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff4d6d';
+        ctx.fill();
+
+        // ── DRAW ROOF DIMENSIONS LABELS ──
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = '9px JetBrains Mono';
+        ctx.textAlign = 'center';
+
+        // Left edge (x = 2, y from 2 to 10)
+        ctx.save();
+        ctx.translate(offsetX + 1.4 * scale, offsetY + 6 * scale);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("Largo: 8.0 m", 0, 0);
+        ctx.restore();
+
+        // Top edge (y = 2, x from 2 to 10)
+        ctx.fillText("Ancho: 8.0 m", offsetX + 6 * scale, offsetY + 1.4 * scale);
+
+        // Inner horizontal (y = 6, x from 6 to 10)
+        ctx.fillText("Retiro: 4.0 m", offsetX + 8 * scale, offsetY + 5.6 * scale);
+
+        // Inner vertical (x = 6, y from 6 to 10)
+        ctx.save();
+        ctx.translate(offsetX + 6.4 * scale, offsetY + 8 * scale);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("Retiro: 4.0 m", 0, 0);
+        ctx.restore();
+
+        // ── DRAW ANGLE SECTOR AT PIVOT (6,6) ──
+        ctx.beginPath();
+        ctx.arc(offsetX + 6 * scale, offsetY + 6 * scale, 30, 0, rad);
+        ctx.strokeStyle = '#ffb703';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Draw dotted indicator of rotated axis direction
+        ctx.beginPath();
+        ctx.setLineDash([3, 3]);
+        ctx.moveTo(offsetX + 6 * scale, offsetY + 6 * scale);
+        ctx.lineTo(offsetX + 6 * scale + 50 * cosVal, offsetY + 6 * scale + 50 * sinVal);
+        ctx.strokeStyle = 'rgba(255, 183, 3, 0.6)';
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        if (currentAngle > 5) {
+          ctx.fillStyle = '#ffb703';
+          ctx.font = 'bold 9px JetBrains Mono';
+          ctx.fillText(`θ = ${currentAngle}°`, offsetX + 6 * scale + 38 * Math.cos(rad / 2), offsetY + 6 * scale + 38 * Math.sin(rad / 2) + 3);
+        }
+
+        // ── DRAW SUN DIRECTION INDICATOR ──
+        const widgetX = canvas.width - 55;
+        const widgetY = 35;
+        
+        ctx.beginPath();
+        ctx.arc(widgetX, widgetY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffb703';
+        ctx.fill();
+        
+        const rayAngle = (solarElevation * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 183, 3, 0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(widgetX, widgetY);
+        const endX = widgetX - 25 * Math.cos(rayAngle);
+        const endY = widgetY + 25 * Math.sin(rayAngle);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        
+        ctx.fillStyle = 'rgba(255, 183, 3, 0.7)';
+        ctx.beginPath();
+        ctx.arc(endX, endY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.font = '8px JetBrains Mono';
+        ctx.textAlign = 'right';
+        ctx.fillText(`Ángulo Solar β = ${solarElevation}°`, widgetX - 12, widgetY + 3);
+        ctx.textAlign = 'left';
+      };
+
+      // ── INTERACTIVE MOUSE DRAG & HOVER TOOLTIP LOGIC ──
+      const tooltip = document.getElementById('canvas-tooltip');
+      let isDraggingCanvas = false;
+      let dragStartX = 0;
+      let dragStartAngle = 0;
+      let isDraggingSun = false;
+
+      canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+        const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+        // Check if click is near the Sun indicator (widgetX = canvas.width - 55, widgetY = 35)
+        const widgetX = canvas.width - 55;
+        const widgetY = 35;
+        const distToSun = Math.hypot(mouseX - widgetX, mouseY - widgetY);
+
+        if (distToSun < 25) {
+          isDraggingSun = true;
+          canvas.style.cursor = 'ns-resize';
+          tooltip.style.opacity = '0';
+        } else {
+          isDraggingCanvas = true;
+          dragStartX = e.clientX;
+          dragStartAngle = currentAngle;
+          canvas.style.cursor = 'ew-resize';
+          tooltip.style.opacity = '0';
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDraggingCanvas || isDraggingSun) {
+          isDraggingCanvas = false;
+          isDraggingSun = false;
+          canvas.style.cursor = 'crosshair';
+        }
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+        const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+        if (isDraggingSun) {
+          // Adjust solar elevation slider (15 to 90 degrees)
+          // Moving Y changes angle
+          const deltaY = mouseY - 35;
+          let newElev = 45 - Math.round(deltaY * 0.9);
+          newElev = Math.max(15, Math.min(90, newElev));
+          solarElevation = newElev;
+          
+          document.getElementById('slider-sun').value = solarElevation;
+          document.getElementById('lbl-sun').innerText = solarElevation + '°';
+          updateOutputs();
+          return;
+        }
+
+        if (isDraggingCanvas) {
+          // Rotate panel grid angle θ (0 to 90 degrees)
+          const deltaX = e.clientX - dragStartX;
+          let newAngle = dragStartAngle + Math.round(deltaX * 0.4);
+          newAngle = Math.max(0, Math.min(90, newAngle));
+          currentAngle = newAngle;
+
+          document.getElementById('slider-angle').value = currentAngle;
+          document.getElementById('lbl-angle').innerText = currentAngle + '°';
+          document.getElementById('slider-calc-angle').value = currentAngle;
+          document.getElementById('lbl-calc-angle').innerText = currentAngle + '°';
+          updateOutputs();
+          return;
+        }
+
+        // Standard hover tooltip
+        let hoveredPanel = null;
+        const rad = (currentAngle * Math.PI) / 180;
+        const cosVal = Math.cos(rad);
+        const sinVal = Math.sin(rad);
+        const pSize = panelSide * scale;
+        const step = panelSide + 0.1;
+
+        for (let u = -8; u <= 8; u += step) {
+          for (let v = -8; v <= 8; v += step) {
+            const rx = 6 + u * cosVal - v * sinVal;
+            const ry = 6 + u * sinVal + v * cosVal;
+
+            const inL = doesPanelFit(rx, ry, panelSide, rad);
+            const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+
+            if (inL) {
+              const scrX = offsetX + rx * scale;
+              const scrY = offsetY + ry * scale;
+
+              const dx = mouseX - scrX;
+              const dy = mouseY - scrY;
+              const localX = dx * cosVal + dy * sinVal;
+              const localY = -dx * sinVal + dy * cosVal;
+
+              if (Math.abs(localX) <= pSize / 2 && Math.abs(localY) <= pSize / 2) {
+                hoveredPanel = {
+                  x: rx.toFixed(2),
+                  y: ry.toFixed(2),
+                  state: nearCorner ? 'Excluido (Área Muerta)' : 'Activo',
+                  color: nearCorner ? 'text-rose-400 font-bold' : 'text-amber-400 font-bold',
+                  power: nearCorner ? '0.00 kWp' : '0.35 kWp'
+                };
+                break;
+              }
+            }
+          }
+          if (hoveredPanel) break;
+        }
+
+        if (hoveredPanel) {
+          tooltip.innerHTML = `
+            <div><span class="text-slate-400">Coordenadas:</span> (${hoveredPanel.x}m, ${hoveredPanel.y}m)</div>
+            <div><span class="text-slate-400">Estado:</span> <span class="${hoveredPanel.color}">${hoveredPanel.state}</span></div>
+            <div><span class="text-slate-400">Potencia:</span> <span class="text-white">${hoveredPanel.power}</span></div>
+          `;
+          const containerRect = canvas.parentElement.getBoundingClientRect();
+          tooltip.style.left = `${e.clientX - containerRect.left + 15}px`;
+          tooltip.style.top = `${e.clientY - containerRect.top + 15}px`;
+          tooltip.style.opacity = '1';
+        } else {
+          tooltip.style.opacity = '0';
+        }
+      });
+
+      canvas.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+      });
+    }
+
+    // MINI CANVAS RENDERING FOR THE LEFT CALCULATOR CARD
+    function initCalcCanvas() {
+      const canvas = document.getElementById('calcCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const scale = 16;
+      const offsetX = 25;
+      const offsetY = 25;
+
+      window.drawCalcCanvas = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // draw L-shaped roof
+        ctx.beginPath();
+        roofBasePoly.forEach((pt, idx) => {
+          const cx = offsetX + pt.x * scale;
+          const cy = offsetY + pt.y * scale;
+          idx === 0 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(20, 32, 60, 0.6)';
+        ctx.fill();
+        ctx.strokeStyle = '#00c8ff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Draw rotated grid panels
+        const rad = (currentAngle * Math.PI) / 180;
+        const cosVal = Math.cos(rad);
+        const sinVal = Math.sin(rad);
+        const pSize = panelSide * scale;
+        const step = panelSide + 0.1;
+
+        for (let u = -8; u <= 8; u += step) {
+          for (let v = -8; v <= 8; v += step) {
+            // Rotate grid relative to pivot (6, 6)
+            const rx = 6 + u * cosVal - v * sinVal;
+            const ry = 6 + u * sinVal + v * cosVal;
+
+            const inL = doesPanelFit(rx, ry, panelSide, rad);
+            const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+
+            if (inL) {
+              const scrX = offsetX + rx * scale;
+              const scrY = offsetY + ry * scale;
+
+              ctx.save();
+              ctx.translate(scrX, scrY);
+              ctx.rotate(rad);
+
+              if (nearCorner) {
+                ctx.fillStyle = 'rgba(255, 77, 109, 0.3)';
+                ctx.strokeStyle = 'rgba(255, 77, 109, 0.7)';
+              } else {
+                ctx.fillStyle = 'rgba(255, 183, 3, 0.2)';
+                ctx.strokeStyle = 'rgba(255, 183, 3, 0.6)';
+              }
+
+              ctx.fillRect(-pSize / 2, -pSize / 2, pSize, pSize);
+              ctx.strokeRect(-pSize / 2, -pSize / 2, pSize, pSize);
+              ctx.restore();
+            }
+          }
+        }
+
+        // draw entry corner dot
+        ctx.beginPath();
+        ctx.arc(offsetX + 6 * scale, offsetY + 6 * scale, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff4d6d';
+        ctx.fill();
+      };
+    }
+
+    // SOLAR RAY IMPACT VECTOR ENGINE
+    function initRayCanvas() {
+      const canvas = document.getElementById('rayCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let isDraggingSun = false;
+      let isDraggingPanel = false;
+      let isAnimatingRay = false;
+      let rayInterval = null;
+
+      // HTML Controls elements
+      const sliderRaySun = document.getElementById('slider-ray-sun');
+      const lblRaySun = document.getElementById('lbl-ray-sun');
+      const sliderRayTilt = document.getElementById('slider-ray-tilt');
+      const lblRayTilt = document.getElementById('lbl-ray-tilt');
+      const btnPlayRay = document.getElementById('btn-play-ray');
+      const btnPlayRayIcon = document.getElementById('btn-play-ray-icon');
+      const btnPlayRayText = document.getElementById('btn-play-ray-text');
+      const btnResetRay = document.getElementById('btn-reset-ray');
+
+      // Mouse drag controls
+      canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+        const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2 + 40;
+
+        // Calculate panel edge position (px2, py2)
+        const panelRad = (-panelTilt * Math.PI) / 180;
+        const cosP = Math.cos(panelRad);
+        const sinP = Math.sin(panelRad);
+        const pLen = 140;
+        const px2 = cx + (pLen / 2) * cosP;
+        const py2 = cy + (pLen / 2) * sinP;
+
+        // Calculate Sun position (sx, sy)
+        const betaRad = (solarElevation * Math.PI) / 180;
+        const rayLen = 110;
+        const sx = cx - rayLen * Math.cos(betaRad);
+        const sy = cy - rayLen * Math.sin(betaRad);
+
+        // Check distance to Sun handle
+        const distSun = Math.hypot(mouseX - sx, mouseY - sy);
+        // Check distance to Panel handle
+        const distPanel = Math.hypot(mouseX - px2, mouseY - py2);
+
+        if (distSun < 22) {
+          isDraggingSun = true;
+          canvas.style.cursor = 'grabbing';
+          if (isAnimatingRay) toggleRayAnimation();
+        } else if (distPanel < 22) {
+          isDraggingPanel = true;
+          canvas.style.cursor = 'grabbing';
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDraggingSun || isDraggingPanel) {
+          isDraggingSun = false;
+          isDraggingPanel = false;
+          canvas.style.cursor = 'crosshair';
+        }
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+        const mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2 + 40;
+
+        if (isDraggingSun) {
+          const dx = cx - mouseX;
+          const dy = cy - mouseY;
+          let angleRad = Math.atan2(dy, dx);
+          let angleDeg = Math.round((angleRad * 180) / Math.PI);
+          angleDeg = Math.max(15, Math.min(90, angleDeg));
+          
+          solarElevation = angleDeg;
+          
+          // Sync HTML controls
+          sliderRaySun.value = solarElevation;
+          lblRaySun.innerText = solarElevation + '°';
+          
+          // Sync main page controls
+          document.getElementById('slider-sun').value = solarElevation;
+          document.getElementById('lbl-sun').innerText = solarElevation + '°';
+          
+          updateOutputs();
+          return;
+        }
+
+        if (isDraggingPanel) {
+          const dx = mouseX - cx;
+          const dy = mouseY - cy;
+          let angleRad = Math.atan2(dy, dx);
+          let angleDeg = Math.round((-angleRad * 180) / Math.PI);
+          angleDeg = Math.max(0, Math.min(60, angleDeg));
+
+          panelTilt = angleDeg;
+          
+          // Sync HTML controls
+          sliderRayTilt.value = panelTilt;
+          lblRayTilt.innerText = panelTilt + '°';
+          
+          updateOutputs();
+          return;
+        }
+
+        // Mouse hover checks for visual feedback
+        const panelRad = (-panelTilt * Math.PI) / 180;
+        const cosP = Math.cos(panelRad);
+        const sinP = Math.sin(panelRad);
+        const pLen = 140;
+        const px2 = cx + (pLen / 2) * cosP;
+        const py2 = cy + (pLen / 2) * sinP;
+
+        const betaRad = (solarElevation * Math.PI) / 180;
+        const rayLen = 110;
+        const sx = cx - rayLen * Math.cos(betaRad);
+        const sy = cy - rayLen * Math.sin(betaRad);
+
+        const distSun = Math.hypot(mouseX - sx, mouseY - sy);
+        const distPanel = Math.hypot(mouseX - px2, mouseY - py2);
+
+        if (distSun < 15 || distPanel < 15) {
+          canvas.style.cursor = 'grab';
+        } else {
+          canvas.style.cursor = 'crosshair';
+        }
+      });
+
+      // Slider Listeners
+      sliderRaySun.addEventListener('input', (e) => {
+        solarElevation = parseInt(e.target.value);
+        lblRaySun.innerText = solarElevation + '°';
+        
+        // Sync main sun slider
+        document.getElementById('slider-sun').value = solarElevation;
+        document.getElementById('lbl-sun').innerText = solarElevation + '°';
+        
+        updateOutputs();
+      });
+
+      sliderRayTilt.addEventListener('input', (e) => {
+        panelTilt = parseInt(e.target.value);
+        lblRayTilt.innerText = panelTilt + '°';
+        updateOutputs();
+      });
+
+      // Play/Pause Animation Loop
+      function toggleRayAnimation() {
+        if (isAnimatingRay) {
+          clearInterval(rayInterval);
+          isAnimatingRay = false;
+          btnPlayRayIcon.className = 'fa-solid fa-play';
+          btnPlayRayText.innerText = 'Iniciar';
+          btnPlayRay.style.borderColor = 'rgba(2, 243, 230, 0.25)';
+          btnPlayRay.style.color = '#02f3e6';
+        } else {
+          isAnimatingRay = true;
+          btnPlayRayIcon.className = 'fa-solid fa-pause';
+          btnPlayRayText.innerText = 'Pausar';
+          btnPlayRay.style.borderColor = '#ffb703';
+          btnPlayRay.style.color = '#ffb703';
+
+          rayInterval = setInterval(() => {
+            let nextBeta = solarElevation + 1;
+            if (nextBeta > 90) nextBeta = 15;
+            solarElevation = nextBeta;
+            
+            // Sync sliders
+            sliderRaySun.value = solarElevation;
+            lblRaySun.innerText = solarElevation + '°';
+            document.getElementById('slider-sun').value = solarElevation;
+            document.getElementById('lbl-sun').innerText = solarElevation + '°';
+            
+            updateOutputs();
+          }, 60);
+        }
+      }
+
+      btnPlayRay.addEventListener('click', toggleRayAnimation);
+
+      // Reset
+      btnResetRay.addEventListener('click', () => {
+        if (isAnimatingRay) toggleRayAnimation();
+        solarElevation = 45;
+        panelTilt = 15;
+        
+        // Sync HTML controls
+        sliderRaySun.value = 45;
+        lblRaySun.innerText = '45°';
+        sliderRayTilt.value = 15;
+        lblRayTilt.innerText = '15°';
+        
+        // Sync main controls
+        document.getElementById('slider-sun').value = 45;
+        document.getElementById('lbl-sun').innerText = '45°';
+        
+        updateOutputs();
+      });
+
+      window.drawRayCanvas = function() {
+        canvas.width = canvas.clientWidth || 480;
+        canvas.height = canvas.clientHeight || 240;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // Grid background
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < w; i += 20) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+        }
+        for (let j = 0; j < h; j += 20) {
+          ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(w, j); ctx.stroke();
+        }
+
+        // Center of impact on panel
+        const cx = w / 2;
+        const cy = h / 2 + 40;
+
+        const panelRad = (-panelTilt * Math.PI) / 180;
+        const cosP = Math.cos(panelRad);
+        const sinP = Math.sin(panelRad);
+
+        // Draw ground baseline
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - 150, cy + 20);
+        ctx.lineTo(cx + 150, cy + 20);
+        ctx.stroke();
+
+        // Draw tilted solar panel profile
+        const pLen = 140; // panel length in pixels
+        const px1 = cx - (pLen / 2) * cosP;
+        const py1 = cy - (pLen / 2) * sinP;
+        const px2 = cx + (pLen / 2) * cosP;
+        const py2 = cy + (pLen / 2) * sinP;
+
+        ctx.strokeStyle = '#02f3e6';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(px1, py1);
+        ctx.lineTo(px2, py2);
+        ctx.stroke();
+
+        // Draw panel support legs
+        ctx.strokeStyle = '#4b5563';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(px1, py1);
+        ctx.lineTo(px1, cy + 20);
+        ctx.moveTo(px2, py2);
+        ctx.lineTo(px2, cy + 20);
+        ctx.stroke();
+
+        // Draw handle indicator at top panel edge (Draggable)
+        ctx.fillStyle = 'rgba(2, 243, 230, 0.2)';
+        ctx.strokeStyle = '#02f3e6';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(px2, py2, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillText(`Inclinación: ${panelTilt}° (Arrastrar)`, px2 + 12, py2 + 3);
+
+        // Calculate solar angles
+        const betaRad = (solarElevation * Math.PI) / 180;
+        const incAngle = 90 - (solarElevation + panelTilt);
+        const incRad = (incAngle * Math.PI) / 180;
+
+        // Draw Normal vector (perpendicular to panel pointing outwards)
+        const normRad = panelRad - Math.PI / 2;
+        const normLen = 80;
+        const nx = cx + normLen * Math.cos(normRad);
+        const ny = cy + normLen * Math.sin(normRad);
+
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(nx, ny);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label Normal
+        ctx.fillStyle = '#10b981';
+        ctx.fillText("Normal n", nx + 5, ny + 2);
+
+        // Draw incoming solar ray vector (Yellow arrow)
+        const rayLen = 110;
+        const sx = cx - rayLen * Math.cos(betaRad);
+        const sy = cy - rayLen * Math.sin(betaRad);
+
+        ctx.strokeStyle = '#ffb703';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(cx, cy);
+        ctx.stroke();
+
+        // Draw arrowhead at (cx, cy)
+        const arrowSize = 8;
+        const angle = betaRad;
+        ctx.fillStyle = '#ffb703';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx - arrowSize * Math.cos(angle - 0.4), cy - arrowSize * Math.sin(angle - 0.4));
+        ctx.lineTo(cx - arrowSize * Math.cos(angle + 0.4), cy - arrowSize * Math.sin(angle + 0.4));
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw handle indicator at Sun (Draggable)
+        ctx.fillStyle = 'rgba(255, 183, 3, 0.25)';
+        ctx.strokeStyle = '#ffb703';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffb703';
+        ctx.fillText(`Sol β: ${solarElevation}° (Arrastrar)`, sx - 40, sy - 16);
+
+        // Draw decomposed Vector Forces (F_n normal in Green, F_t tangent in Red)
+        const fnLen = Math.cos(incRad) * 80;
+        const fnRad = panelRad + Math.PI / 2;
+        const fnx = cx + fnLen * Math.cos(fnRad);
+        const fny = cy + fnLen * Math.sin(fnRad);
+
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(fnx, fny);
+        ctx.stroke();
+
+        // Arrowhead for Fn
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.moveTo(fnx, fny);
+        ctx.lineTo(fnx - arrowSize * Math.cos(fnRad - 0.4), fny - arrowSize * Math.sin(fnRad - 0.4));
+        ctx.lineTo(fnx - arrowSize * Math.cos(fnRad + 0.4), fny - arrowSize * Math.sin(fnRad + 0.4));
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#10b981';
+        ctx.fillText(`F_n: ${Math.round(1000 * Math.cos(incRad))} W/m²`, fnx - 10, fny + 15);
+
+        // Tangent force F_t component (sliding energy / reflectance)
+        const ftLen = Math.sin(incRad) * 80;
+        const ftRad = panelRad + Math.PI;
+        const ftx = cx + ftLen * Math.cos(ftRad);
+        const fty = cy + ftLen * Math.sin(ftRad);
+
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(ftx, fty);
+        ctx.stroke();
+
+        // Arrowhead for Ft
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(ftx, fty);
+        ctx.lineTo(ftx - arrowSize * Math.cos(ftRad - 0.4), fty - arrowSize * Math.sin(ftRad - 0.4));
+        ctx.lineTo(ftx - arrowSize * Math.cos(ftRad + 0.4), fty - arrowSize * Math.sin(ftRad + 0.4));
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText(`F_t: ${Math.round(1000 * Math.sin(incRad))} W/m²`, ftx - 65, fty - 5);
+
+        // Update Text Info Cards
+        const incDeg = Math.round(incAngle);
+        const cosVal = Math.cos(incRad);
+        const normalIrr = Math.round(1000 * cosVal);
+        const tangIrr = Math.round(1000 * Math.sin(incRad));
+
+        document.getElementById('ray-inc-angle').innerText = `${incDeg}°`;
+        document.getElementById('ray-cos-eff').innerText = `${(cosVal * 100).toFixed(1)}%`;
+        document.getElementById('ray-norm-val').innerText = `${normalIrr} W/m²`;
+        document.getElementById('ray-tang-val').innerText = `${tangIrr} W/m²`;
+
+        // Sync slider labels just in case dragging moved them
+        sliderRaySun.value = solarElevation;
+        lblRaySun.innerText = solarElevation + '°';
+        sliderRayTilt.value = panelTilt;
+        lblRayTilt.innerText = panelTilt + '°';
+      };
+      
+      window.drawRayCanvas();
+    }
+
+    // COMPARISON SIMULATOR MOCKUP ENGINE
+    function initCompCanvas() {
+      const canvasL = document.getElementById('compCanvasL');
+      const canvasRect = document.getElementById('compCanvasRect');
+      if (!canvasL || !canvasRect) return;
+
+      const ctxL = canvasL.getContext('2d');
+      const ctxRect = canvasRect.getContext('2d');
+
+      let compBeta = 45; // local solar elevation state for this simulator
+      let isAnimatingComp = false;
+      let compInterval = null;
+
+      const scale = 25;
+      const offsetX = 30;
+      const offsetY = 30;
+
+      window.drawCompCanvases = function() {
+        // Update client dimensions
+        canvasL.width = canvasL.clientWidth || 300;
+        canvasL.height = canvasL.clientHeight || 300;
+        canvasRect.width = canvasRect.clientWidth || 300;
+        canvasRect.height = canvasRect.clientHeight || 300;
+
+        const w = canvasL.width;
+        const h = canvasL.height;
+
+        // Draw Left: L-Roof
+        ctxL.clearRect(0, 0, w, h);
+        // grid
+        ctxL.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+        ctxL.lineWidth = 1;
+        for (let i = 0; i < w; i += 20) {
+          ctxL.beginPath(); ctxL.moveTo(i, 0); ctxL.lineTo(i, h); ctxL.stroke();
+          ctxL.beginPath(); ctxL.moveTo(0, i); ctxL.lineTo(w, i); ctxL.stroke();
+        }
+
+        // draw L-roof shape
+        ctxL.beginPath();
+        roofBasePoly.forEach((pt, idx) => {
+          const cx = offsetX + pt.x * scale;
+          const cy = offsetY + pt.y * scale;
+          idx === 0 ? ctxL.moveTo(cx, cy) : ctxL.lineTo(cx, cy);
+        });
+        ctxL.closePath();
+        ctxL.fillStyle = 'rgba(20, 32, 60, 0.6)';
+        ctxL.fill();
+        ctxL.strokeStyle = '#02f3e6';
+        ctxL.lineWidth = 2.5;
+        ctxL.stroke();
+
+        // draw L-roof center G (yellow dot)
+        ctxL.beginPath();
+        ctxL.arc(offsetX + 6 * scale, offsetY + 6 * scale, 5, 0, Math.PI * 2);
+        ctxL.fillStyle = '#ffb703';
+        ctxL.fill();
+        ctxL.fillStyle = '#ffffff';
+        ctxL.font = 'bold 8px font-sans';
+        ctxL.fillText("G", offsetX + 6 * scale + 8, offsetY + 6 * scale + 3);
+
+        // Draw parallel solar ray force vectors hitting the L-roof
+        const betaRad = (compBeta * Math.PI) / 180;
+        const rayCos = Math.cos(betaRad);
+        const raySin = Math.sin(betaRad);
+
+        ctxL.strokeStyle = '#ffb703';
+        ctxL.lineWidth = 1.5;
+        ctxL.fillStyle = '#ffb703';
+        const arrowSize = 6;
+
+        for (let i = 0; i < 6; i++) {
+          const rx = offsetX + (2.5 + i * 1.2) * scale;
+          const ry = offsetY + (1.5 + i * 0.2) * scale;
+          
+          const startX = rx - 50 * rayCos;
+          const startY = ry - 50 * raySin;
+
+          ctxL.beginPath();
+          ctxL.moveTo(startX, startY);
+          ctxL.lineTo(rx, ry);
+          ctxL.stroke();
+
+          // Arrowhead
+          ctxL.beginPath();
+          ctxL.moveTo(rx, ry);
+          ctxL.lineTo(rx - arrowSize * Math.cos(betaRad - 0.4), ry - arrowSize * Math.sin(betaRad - 0.4));
+          ctxL.lineTo(rx - arrowSize * Math.cos(betaRad + 0.4), ry - arrowSize * Math.sin(betaRad + 0.4));
+          ctxL.closePath();
+          ctxL.fill();
+        }
+
+        // Draw Right: Rectangular Roof (8x6)
+        ctxRect.clearRect(0, 0, w, h);
+        ctxRect.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+        ctxRect.lineWidth = 1;
+        for (let i = 0; i < w; i += 20) {
+          ctxRect.beginPath(); ctxRect.moveTo(i, 0); ctxRect.lineTo(i, h); ctxRect.stroke();
+          ctxRect.beginPath(); ctxRect.moveTo(0, i); ctxRect.lineTo(w, i); ctxRect.stroke();
+        }
+
+        // Rectangular roof path: x in [2, 10], y in [2, 8] -> area = 8 * 6 = 48m2 (identical area)
+        ctxRect.beginPath();
+        ctxRect.moveTo(offsetX + 2 * scale, offsetY + 2 * scale);
+        ctxRect.lineTo(offsetX + 10 * scale, offsetY + 2 * scale);
+        ctxRect.lineTo(offsetX + 10 * scale, offsetY + 8 * scale);
+        ctxRect.lineTo(offsetX + 2 * scale, offsetY + 8 * scale);
+        ctxRect.closePath();
+        ctxRect.fillStyle = 'rgba(20, 32, 60, 0.6)';
+        ctxRect.fill();
+        ctxRect.strokeStyle = '#0088ff';
+        ctxRect.lineWidth = 2.5;
+        ctxRect.stroke();
+
+        // draw center G (yellow dot)
+        ctxRect.beginPath();
+        ctxRect.arc(offsetX + 6 * scale, offsetY + 5 * scale, 5, 0, Math.PI * 2);
+        ctxRect.fillStyle = '#ffb703';
+        ctxRect.fill();
+        ctxRect.fillStyle = '#ffffff';
+        ctxRect.font = 'bold 8px font-sans';
+        ctxRect.fillText("G", offsetX + 6 * scale + 8, offsetY + 5 * scale + 3);
+
+        ctxRect.strokeStyle = '#ffb703';
+        ctxRect.lineWidth = 1.5;
+        ctxRect.fillStyle = '#ffb703';
+
+        for (let i = 0; i < 6; i++) {
+          const rx = offsetX + (2.5 + i * 1.2) * scale;
+          const ry = offsetY + (1.5 + i * 0.1) * scale;
+          
+          const startX = rx - 50 * rayCos;
+          const startY = ry - 50 * raySin;
+
+          ctxRect.beginPath();
+          ctxRect.moveTo(startX, startY);
+          ctxRect.lineTo(rx, ry);
+          ctxRect.stroke();
+
+          // Arrowhead
+          ctxRect.beginPath();
+          ctxRect.moveTo(rx, ry);
+          ctxRect.lineTo(rx - arrowSize * Math.cos(betaRad - 0.4), ry - arrowSize * Math.sin(betaRad - 0.4));
+          ctxRect.lineTo(rx - arrowSize * Math.cos(betaRad + 0.4), ry - arrowSize * Math.sin(betaRad + 0.4));
+          ctxRect.closePath();
+          ctxRect.fill();
+        }
+
+        // Dynamically calculate comparison metrics
+        const stepSize = panelSide + 0.1;
+        
+        let panelsL = 0;
+        for (let u = -8; u <= 8; u += stepSize) {
+          for (let v = -8; v <= 8; v += stepSize) {
+            const rx = 6 + u;
+            const ry = 6 + v;
+            const inL = doesPanelFit(rx, ry, panelSide, 0);
+            const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+            if (inL && !nearCorner) panelsL++;
+          }
+        }
+        
+        let panelsRect = 0;
+        for (let u = -8; u <= 8; u += stepSize) {
+          for (let v = -8; v <= 8; v += stepSize) {
+            const rx = 6 + u;
+            const ry = 5 + v;
+            const h = panelSide / 2;
+            const corners = [
+              {x: rx - h, y: ry - h},
+              {x: rx + h, y: ry - h},
+              {x: rx + h, y: ry + h},
+              {x: rx - h, y: ry + h}
+            ];
+            let fit = true;
+            for (let c of corners) {
+              if (c.x < 2 || c.x > 10 || c.y < 2 || c.y > 8) {
+                fit = false; break;
+              }
+            }
+            if (fit) panelsRect++;
+          }
+        }
+
+        const areaL = panelsL * panelSide * panelSide;
+        const lossL = ((48.0 - areaL) / 48.0) * 100;
+
+        const areaRect = panelsRect * panelSide * panelSide;
+        const lossRect = ((48.0 - areaRect) / 48.0) * 100;
+
+        document.getElementById('comp-l-loss').innerText = `${lossL.toFixed(1)}%`;
+        document.getElementById('comp-rect-loss').innerText = `${lossRect.toFixed(1)}%`;
+        document.getElementById('comp-l-lbl-beta').innerText = `${compBeta}°`;
+        document.getElementById('comp-rect-lbl-beta').innerText = `${compBeta}°`;
+      };
+
+      // Controls listeners
+      const sliderComp = document.getElementById('slider-comp-beta');
+      const lblComp = document.getElementById('lbl-comp-beta');
+      const btnPlayComp = document.getElementById('btn-play-comp');
+      const btnPlayIcon = document.getElementById('btn-play-comp-icon');
+      const btnPlayText = document.getElementById('btn-play-comp-text');
+      const btnResetComp = document.getElementById('btn-reset-comp');
+
+      sliderComp.addEventListener('input', (e) => {
+        compBeta = parseInt(e.target.value);
+        lblComp.innerText = compBeta + '°';
+        window.drawCompCanvases();
+      });
+
+      function toggleCompAnimation() {
+        if (isAnimatingComp) {
+          clearInterval(compInterval);
+          isAnimatingComp = false;
+          btnPlayIcon.className = 'fa-solid fa-play';
+          btnPlayText.innerText = 'Iniciar';
+          btnPlayComp.style.borderColor = 'rgba(2, 243, 230, 0.25)';
+          btnPlayComp.style.color = '#02f3e6';
+        } else {
+          isAnimatingComp = true;
+          btnPlayIcon.className = 'fa-solid fa-pause';
+          btnPlayText.innerText = 'Pausar';
+          btnPlayComp.style.borderColor = '#ffb703';
+          btnPlayComp.style.color = '#ffb703';
+
+          compInterval = setInterval(() => {
+            let nextBeta = compBeta + 1;
+            if (nextBeta > 90) nextBeta = 15;
+            compBeta = nextBeta;
+            sliderComp.value = compBeta;
+            lblComp.innerText = compBeta + '°';
+            window.drawCompCanvases();
+          }, 80);
+        }
+      }
+
+      btnPlayComp.addEventListener('click', toggleCompAnimation);
+
+      btnResetComp.addEventListener('click', () => {
+        if (isAnimatingComp) toggleCompAnimation();
+        compBeta = 45;
+        sliderComp.value = 45;
+        lblComp.innerText = '45°';
+        window.drawCompCanvases();
+      });
+
+      window.drawCompCanvases();
+    }
+
+    // 3D WEBGL ENGINE (Three.js)
+    function initThree3D() {
+      const container = document.getElementById('container3d');
+      if (!container) return;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060b16);
+
+      // Helper to generate glowing billboard canvas labels in 3D
+      function create3DLabel(text, color = '#02f3e6') {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = 'rgba(6, 11, 22, 0.9)';
+        ctx.strokeStyle = '#02f3e6';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(4, 4, 248, 56, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.font = 'bold 20px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 128, 32);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(2.4, 0.6, 1);
+        return sprite;
+      }
+
+      const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+      camera.position.set(12, 13, 15);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const w = container.clientWidth || 450;
+      renderer.setSize(w, w);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // Light setup
+      const ambientLight = new THREE.AmbientLight(0x0d203f, 0.85);
+      scene.add(ambientLight);
+
+      // Solar directional light (cast shadow)
+      const sunLight = new THREE.DirectionalLight(0xfff5d6, 1.8);
+      sunLight.position.set(15, 20, 15);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+      sunLight.shadow.bias = -0.0005;
+      scene.add(sunLight);
+
+      // Visual Sun Sphere
+      const sunGeo = new THREE.SphereGeometry(0.8, 16, 16);
+      const sunMat = new THREE.MeshBasicMaterial({ color: 0xffb703 });
+      const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+      scene.add(sunMesh);
+
+      // Technical Grid Ground Base plate
+      const groundGeo = new THREE.PlaneGeometry(35, 35);
+      const groundMat = new THREE.MeshStandardMaterial({
+        color: 0x050b14,
+        roughness: 0.8,
+        metalness: 0.1
+      });
+      const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+      groundMesh.rotation.x = -Math.PI / 2;
+      groundMesh.position.y = -1.2;
+      groundMesh.receiveShadow = true;
+      scene.add(groundMesh);
+
+      const gridHelper = new THREE.GridHelper(30, 30, 0x00c8ff, 0x11213f);
+      gridHelper.position.y = -1.19;
+      scene.add(gridHelper);
+
+      // Add a small neon border around the residential site base
+      const siteBoxGeo = new THREE.BoxGeometry(30.1, 0.05, 30.1);
+      const siteBoxMat = new THREE.MeshBasicMaterial({ color: 0x00c8ff, wireframe: true });
+      const siteBox = new THREE.Mesh(siteBoxGeo, siteBoxMat);
+      siteBox.position.set(0, -1.2, 0);
+      scene.add(siteBox);
+
+      // ── ADD 3D DIMENSION ARROWS & LABELS ──
+      const arrowColor = 0x00c8ff;
+      
+      // X-axis dimension (Ancho: 8.0m)
+      const dirX = new THREE.Vector3(1, 0, 0);
+      const originX = new THREE.Vector3(-4, 0.5, 4.4);
+      const arrowX = new THREE.ArrowHelper(dirX, originX, 8.0, arrowColor, 0.25, 0.12);
+      scene.add(arrowX);
+
+      const labelX = create3DLabel("Ancho: 8.0m", "#ffffff");
+      labelX.position.set(0, 1.0, 4.8);
+      scene.add(labelX);
+
+      // Z-axis dimension (Largo: 8.0m)
+      const dirZ = new THREE.Vector3(0, 0, -1);
+      const originZ = new THREE.Vector3(-4.4, 0.5, 4.0);
+      const arrowZ = new THREE.ArrowHelper(dirZ, originZ, 8.0, arrowColor, 0.25, 0.12);
+      scene.add(arrowZ);
+
+      const labelZ = create3DLabel("Largo: 8.0m", "#ffffff");
+      labelZ.position.set(-4.9, 1.0, 0);
+      scene.add(labelZ);
+
+      // Inner corner retreats (4.0m)
+      const dirRetreatX = new THREE.Vector3(1, 0, 0);
+      const originRetreatX = new THREE.Vector3(0, 0.5, 0);
+      const arrowRetreatX = new THREE.ArrowHelper(dirRetreatX, originRetreatX, 4.0, arrowColor, 0.25, 0.12);
+      scene.add(arrowRetreatX);
+
+      const labelRetreatX = create3DLabel("Retiro: 4.0m", "#ffffff");
+      labelRetreatX.position.set(2, 1.0, 0.4);
+      scene.add(labelRetreatX);
+
+      const dirRetreatZ = new THREE.Vector3(0, 0, 1);
+      const originRetreatZ = new THREE.Vector3(0, 0.5, 0);
+      const arrowRetreatZ = new THREE.ArrowHelper(dirRetreatZ, originRetreatZ, 4.0, arrowColor, 0.25, 0.12);
+      scene.add(arrowRetreatZ);
+
+      const labelRetreatZ = create3DLabel("Retiro: 4.0m", "#ffffff");
+      labelRetreatZ.position.set(0.4, 1.0, 2);
+      scene.add(labelRetreatZ);
+
+      // Vértice Cóncavo Pivote label
+      const pivotLabel = create3DLabel("Pivote (6,6)", "#ff4d6d");
+      pivotLabel.position.set(0, 1.3, 0);
+      scene.add(pivotLabel);
+
+      const roofGroup = new THREE.Group();
+      scene.add(roofGroup);
+
+      // Extrude shape of L-roof
+      const shape = new THREE.Shape();
+      shape.moveTo(2, 2);
+      shape.lineTo(10, 2);
+      shape.lineTo(10, 6);
+      shape.lineTo(6, 6);
+      shape.lineTo(6, 10);
+      shape.lineTo(2, 10);
+
+      const extrudeSettings = { depth: 0.8, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.05, bevelThickness: 0.05 };
+      const roofGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      
+      const roofMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x11213f,
+        roughness: 0.35,
+        metalness: 0.1,
+        transmission: 0.3,
+        transparent: true,
+        opacity: 0.9,
+        side: THREE.DoubleSide
+      });
+      
+      const roofMesh = new THREE.Mesh(roofGeometry, roofMaterial);
+      roofMesh.rotation.x = -Math.PI / 2;
+      roofMesh.position.set(-6, -0.4, 6); // center L-shape
+      roofMesh.receiveShadow = true;
+      roofGroup.add(roofMesh);
+
+      // Group to contain solar panels
+      let panelsContainer = new THREE.Group();
+      panelsContainer.position.set(0, 0.45, 0); // align on roof surface
+      roofGroup.add(panelsContainer);
+
+      window.updateThreeMesh = function() {
+        // Clear previous panels
+        while (panelsContainer.children.length > 0) {
+          const child = panelsContainer.children[0];
+          panelsContainer.remove(child);
+          // Recursively dispose geometry/materials
+          child.traverse(node => {
+            if (node.geometry) node.geometry.dispose();
+            if (node.material) {
+              if (Array.isArray(node.material)) node.material.forEach(m => m.dispose());
+              else node.material.dispose();
+            }
+          });
+        }
+
+        const size = panelSide;
+        
+        // Wafer geometry and frame geometry
+        const waferGeo = new THREE.BoxGeometry(size * 0.84, 0.04, size * 0.84);
+        const frameGeo = new THREE.BoxGeometry(size * 0.9, 0.03, size * 0.9);
+        const legGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.12, 8);
+        
+        const waferMat = new THREE.MeshStandardMaterial({
+          color: 0x050f26,
+          roughness: 0.1,
+          metalness: 0.9,
+          emissive: 0x005b96,
+          emissiveIntensity: 0.15
+        });
+
+        const frameMat = new THREE.MeshStandardMaterial({
+          color: 0xd1d5db,
+          roughness: 0.25,
+          metalness: 0.9
+        });
+
+        const legMat = new THREE.MeshStandardMaterial({
+          color: 0x4b5563,
+          metalness: 0.9
+        });
+        
+        const rad = (currentAngle * Math.PI) / 180;
+        const cosVal = Math.cos(rad);
+        const sinVal = Math.sin(rad);
+        const step = size + 0.1;
+
+        let panelId = 0;
+
+        // Loop and add 3D panels based on rotated grid coordinates
+        for (let u = -8; u <= 8; u += step) {
+          for (let v = -8; v <= 8; v += step) {
+            const rx = 6 + u * cosVal - v * sinVal;
+            const ry = 6 + u * sinVal + v * cosVal;
+
+            const inL = doesPanelFit(rx, ry, size, rad);
+            const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+
+            if (inL && !nearCorner) {
+              panelId++;
+              // Create a Group representing the full structural assembly
+              const panelGroup = new THREE.Group();
+              panelGroup.userData = { id: panelId, x: rx, y: ry };
+              
+              // Wafer (silicon cell)
+              const wafer = new THREE.Mesh(waferGeo, waferMat);
+              wafer.position.y = 0.025;
+              wafer.castShadow = true;
+              wafer.receiveShadow = true;
+              panelGroup.add(wafer);
+
+              // Metal outer frame
+              const frame = new THREE.Mesh(frameGeo, frameMat);
+              frame.position.y = 0.01;
+              frame.castShadow = true;
+              frame.receiveShadow = true;
+              panelGroup.add(frame);
+
+              // 4 Support structure legs
+              const offsetLeg = size * 0.35;
+              const leg1 = new THREE.Mesh(legGeo, legMat);
+              leg1.position.set(-offsetLeg, -0.06, -offsetLeg);
+              const leg2 = new THREE.Mesh(legGeo, legMat);
+              leg2.position.set(offsetLeg, -0.06, -offsetLeg);
+              const leg3 = new THREE.Mesh(legGeo, legMat);
+              leg3.position.set(-offsetLeg, -0.06, offsetLeg);
+              const leg4 = new THREE.Mesh(legGeo, legMat);
+              leg4.position.set(offsetLeg, -0.06, offsetLeg);
+              
+              panelGroup.add(leg1, leg2, leg3, leg4);
+
+              // Position group relative to pivot (6, 6)
+              panelGroup.position.set(rx - 6, 0.07, -(ry - 6));
+              panelGroup.rotation.y = -rad; // Rotate individual panel to match grid rotation
+              
+              panelsContainer.add(panelGroup);
+            }
+          }
+        }
+        panelsContainer.rotation.y = 0;
+
+        // ── UPDATE SUN LIGHT POSITION based on altitude angle ──
+        const sunRad = (solarElevation * Math.PI) / 180;
+        // Assume sun rotates in a circle, height proportional to altitude
+        const radius = 25;
+        const sx = radius * Math.cos(sunRad);
+        const sy = radius * Math.sin(sunRad);
+        const sz = 10; // offset slightly
+        sunLight.position.set(sx, sy, sz);
+        sunMesh.position.set(sx, sy, sz);
+        if (typeof sunLabel !== 'undefined') {
+          sunLabel.position.set(sx, sy + 1.2, sz);
+        }
+      };
+
+      // Orbit controls initialization
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+      controls.minDistance = 6;
+      controls.maxDistance = 35;
+      controls.target.set(0, 0, 0);
+
+      // Visual Sun Label
+      const sunLabel = create3DLabel("Sol", "#ffb703");
+      scene.add(sunLabel);
+
+      // Raycaster for 3D panels hover interaction
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      const hud3d = document.getElementById('hud3d');
+      let intersectedObject = null;
+
+      container.addEventListener('mousemove', (event) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        
+        // Intersect recursive children of panelsContainer
+        const intersects = raycaster.intersectObjects(panelsContainer.children, true);
+
+        if (intersects.length > 0) {
+          // Find the top-level group of the panel
+          let pGroup = intersects[0].object;
+          while (pGroup.parent && pGroup.parent !== panelsContainer) {
+            pGroup = pGroup.parent;
+          }
+
+          if (intersectedObject !== pGroup) {
+            // Restore previous panel's cell material glow
+            if (intersectedObject) {
+              intersectedObject.traverse(node => {
+                if (node.material && node.material.emissive && node.userData.originalEmissiveIntensity !== undefined) {
+                  node.material.emissiveIntensity = node.userData.originalEmissiveIntensity;
+                }
+              });
+            }
+
+            intersectedObject = pGroup;
+
+            // Highlight current panel group by making the blue cell glow bright cyan
+            intersectedObject.traverse(node => {
+              if (node.material && node.material.emissive) {
+                if (node.userData.originalEmissiveIntensity === undefined) {
+                  node.userData.originalEmissiveIntensity = node.material.emissiveIntensity;
+                }
+                node.material.emissiveIntensity = 0.9; // boost emission
+              }
+            });
+
+            // Update HUD overlay text
+            const pId = intersectedObject.userData.id || 0;
+            const px = intersectedObject.userData.x || 0;
+            const py = intersectedObject.userData.y || 0;
+
+            document.getElementById('hud3d-id').innerHTML = `<span class="text-slate-400">ID:</span> Módulo #${pId}`;
+            document.getElementById('hud3d-coords').innerHTML = `<span class="text-slate-400">Pos:</span> (${px.toFixed(2)}m, ${py.toFixed(2)}m)`;
+            document.getElementById('hud3d-power').innerHTML = `<span class="text-slate-400">Potencia:</span> 0.35 kWp`;
+            
+            const shadowL = (1 / Math.tan((solarElevation * Math.PI) / 180)).toFixed(2);
+            document.getElementById('hud3d-shadow').innerHTML = `<span class="text-slate-400">Sombra L:</span> ${shadowL}m`;
+
+            hud3d.style.opacity = '1';
+          }
+        } else {
+          // Clear highlight if mouse moves away
+          if (intersectedObject) {
+            intersectedObject.traverse(node => {
+              if (node.material && node.material.emissive && node.userData.originalEmissiveIntensity !== undefined) {
+                node.material.emissiveIntensity = node.userData.originalEmissiveIntensity;
+              }
+            });
+            intersectedObject = null;
+          }
+          hud3d.style.opacity = '0';
+        }
+      });
+
+      container.addEventListener('mouseleave', () => {
+        if (intersectedObject) {
+          intersectedObject.traverse(node => {
+            if (node.material && node.material.emissive && node.userData.originalEmissiveIntensity !== undefined) {
+              node.material.emissiveIntensity = node.userData.originalEmissiveIntensity;
+            }
+          });
+          intersectedObject = null;
+        }
+        hud3d.style.opacity = '0';
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.triggerThreeResize = function() {
+        const width = container.clientWidth || 450;
+        renderer.setSize(width, width);
+        camera.aspect = 1;
+        camera.updateProjectionMatrix();
+      };
+      window.addEventListener('resize', window.triggerThreeResize);
+    }
+
+    // SPEECH AUDIO PITCH ENGINE
+    let currentUtterance = null;
+    let pitchIsPlaying = false;
+    let speechProgressInterval = null;
+
+    function stopSpeech() {
+      window.speechSynthesis.cancel();
+      if (speechProgressInterval) clearInterval(speechProgressInterval);
+      document.getElementById('speechProgressBar').style.width = '0%';
+      document.querySelectorAll('#pitchScript p').forEach(p => p.style.color = '');
+      pitchIsPlaying = false;
+    }
+
+    // Pause Speech
+    function pauseSpeech() {
+      window.speechSynthesis.pause();
+      pitchIsPlaying = false;
+    }
+
+    // Speech trigger
+    function speakPitch() {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+        pitchIsPlaying = true;
+        return;
+      }
+      stopSpeech();
+
+      // Concatenated speech segments text
+      const segments = [
+        { id: 'seg1', text: "Estimados inversores, les presento SOLAR MESH dos de. En la costa de Santa Elena, miles de techos tienen formas de L no convexas que desperdician hasta un 25 por ciento del espacio útil para instalar paneles debido a la rigidez de las instalaciones convencionales de cero grados. Nuestra solución optimiza el ángulo geométrico exacto de teselación solar." },
+        { id: 'seg2', text: "Un hexágono no convexo con un vértice de 270 grados perturba las mallas ortogonales. Si instalamos los paneles de forma tradicional, generamos un área muerta teórica en la esquina. Con nuestro modelo analítico euclidiano, calculamos la diagonal y la rotación exacta." },
+        { id: 'seg3', text: "Al rotar la cuadrícula a la bisectriz óptima, logramos encajar un 18 por ciento más de paneles en el mismo techo. Esto representa un ahorro de material de montaje y aumenta la potencia instalada de tres punto dos kilovatios a cuatro punto cinco kilovatios para la misma vivienda sin añadir un solo metro cuadrado de techo." },
+        { id: 'seg4', text: "El espaciado óptimo calcula las sombras solares en 3D para evitar autotrabamiento de paneles según la altitud solar. Esto nos garantiza un flujo de potencia constante a lo largo de todo el día." },
+        { id: 'seg5', text: "Este optimizador exporta planos de escala A1 listos para impresión de maquetas y coordenadas GeoJSON integrables en sistemas de información geográfica SIG. Inviertan en SOLAR MESH dos de y lideremos la micro generación eficiente en la costa ecuatoriana." }
+      ];
+
+      let currentSegmentIdx = 0;
+      pitchIsPlaying = true;
+
+      function speakNextSegment() {
+        if (currentSegmentIdx >= segments.length) {
+          stopSpeech();
+          return;
+        }
+
+        const seg = segments[currentSegmentIdx];
+        const utterance = new SpeechSynthesisUtterance(seg.text);
+        utterance.lang = 'es-ES';
+        utterance.rate = 1.0;
+        
+        // Highlight active text in GUI
+        document.querySelectorAll('#pitchScript p').forEach(p => p.style.color = '');
+        const activeParagraph = document.getElementById(seg.id);
+        if (activeParagraph) {
+          activeParagraph.style.color = 'var(--primary-solar)';
+          activeParagraph.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Update progress bar linearly
+        const progress = ((currentSegmentIdx + 1) / segments.length) * 100;
+        document.getElementById('speechProgressBar').style.width = `${progress}%`;
+
+        utterance.onend = () => {
+          currentSegmentIdx++;
+          speakNextSegment();
+        };
+
+        utterance.onerror = () => {
+          stopSpeech();
+        };
+
+        currentUtterance = utterance;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      speakNextSegment();
+    }
+
+    function toggleScript() {
+      const scriptPanel = document.getElementById('pitchScript');
+      const btn = document.getElementById('scriptBtn');
+      scriptPanel.classList.toggle('hidden');
+      if (scriptPanel.classList.contains('hidden')) {
+        btn.textContent = 'Ver Guión';
+      } else {
+        btn.textContent = 'Ocultar Guión';
+      }
+    }
+
+    // EMULATED FLASH TIMELINE PRESENTATION
+    function jumpToFrame(frameNumber) {
+      currentFrame = frameNumber;
+      document.getElementById('lbl-flash-frame').innerText = currentFrame;
+      
+      const data = flashSlides[currentFrame];
+      document.getElementById('flash-slide-title').innerText = data.title;
+      document.getElementById('flash-slide-desc').innerText = data.desc;
+      document.getElementById('flash-slide-img').src = `./slide${currentFrame}.png`;
+
+      // Speak narration if enabled
+      if (slideAudioEnabled) {
+        window.speechSynthesis.cancel();
+        if (typeof pitchIsPlaying !== 'undefined' && pitchIsPlaying) {
+          stopSpeech();
+        }
+        const textToSpeak = `${data.title}. ${data.desc}`;
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'es-ES';
+        utterance.rate = 1.05;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      const nodes = document.querySelectorAll('.flash-kf');
+      nodes.forEach((node, idx) => {
+        if (idx + 1 <= currentFrame) {
+          node.classList.remove('bg-slate-700');
+          node.classList.add('bg-cyan-400');
+        } else {
+          node.classList.remove('bg-cyan-400');
+          node.classList.add('bg-slate-700');
+        }
+      });
+
+      const progressPercent = ((currentFrame - 1) / 3) * 100;
+      document.getElementById('flash-progress-bar').style.width = `${progressPercent}%`;
+    }
+
+    function playFlashTimeline() {
+      if (flashInterval) clearInterval(flashInterval);
+      flashInterval = setInterval(() => {
+        let nextFrame = currentFrame + 1;
+        if (nextFrame > 4) nextFrame = 1;
+        jumpToFrame(nextFrame);
+      }, 4500);
+    }
+
+    function pauseFlashTimeline() {
+      if (flashInterval) {
+        clearInterval(flashInterval);
+        flashInterval = null;
+      }
+    }
+
+    // Stop Flash Timeline
+    function stopFlashTimeline() {
+      pauseFlashTimeline();
+      window.speechSynthesis.cancel();
+      jumpToFrame(1);
+    }
+
+    // Flash Slide audio toggle
+    function toggleFlashAudio() {
+      slideAudioEnabled = !slideAudioEnabled;
+      const btn = document.getElementById('btn-flash-audio');
+      if (slideAudioEnabled) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        btn.classList.remove('text-slate-500');
+        btn.classList.add('text-violet-400');
+        jumpToFrame(currentFrame);
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        btn.classList.remove('text-violet-400');
+        btn.classList.add('text-slate-500');
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    // Image Zoom overlay / Lightbox
+    function openFlashLightbox() {
+      const lightbox = document.getElementById('flashLightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const slideImg = document.getElementById('flash-slide-img');
+      lightboxImg.src = slideImg.src;
+      lightbox.classList.add('active');
+    }
+
+    function closeFlashLightbox() {
+      const lightbox = document.getElementById('flashLightbox');
+      lightbox.classList.remove('active');
+    }
+
+    // EXPORT FUNCTIONS & PYTHON SIMULATOR
+    function exportGeoJSON() {
+      const geojson = {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {
+              "name": "Techo Poligonal Irregular - Santa Elena Optimizado",
+              "angulo_rotacion_optimo": currentAngle,
+              "tamano_panel": panelSide,
+              "eficiencia_calculada": document.getElementById('hero-efficiency') ? document.getElementById('hero-efficiency').innerText : "0.0%"
+            },
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [[
+                [2.0, 2.0], [10.0, 2.0], [10.0, 6.0], [6.0, 6.0], [6.0, 10.0], [2.0, 10.0], [2.0, 2.0]
+              ]]
+            }
+          }
+        ]
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "solar_mesh_layout.geojson");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function triggerA1Report() {
+      alert(`=== PLANO TÉCNICO DE MAQUETACIÓN A1 GENERADO ===\n\nMétricas de Ensamblado Geométrico:\n- Ángulo de Rotación de la Grilla: ${currentAngle}°\n- Medida Módulo Solar: ${panelSide.toFixed(1)}m x ${panelSide.toFixed(1)}m\n- Altura Solar de Diseño (Sombra): ${solarElevation}°\n- Diagonal Euclidiana de Control T1: 5.65 metros\n\nListo para exportación e impresión a escala real.`);
+    }
+
+    // Python Interpreter emulator
+    function runPython() {
+      const consoleEl = document.getElementById('pyConsole');
+      const canvas = document.getElementById('matplotCanvas');
+      const code = document.getElementById('pyCode').value;
+
+      let parsedLado = panelSide;
+      let parsedTheta = currentAngle;
+      try {
+        const ladoMatch = code.match(/lado_panel\s*=\s*([\d.]+)/);
+        const thetaMatch = code.match(/theta\s*=\s*(\d+)/);
+        if (ladoMatch) parsedLado = parseFloat(ladoMatch[1]);
+        if (thetaMatch) parsedTheta = parseInt(thetaMatch[1]);
+      } catch(e) {}
+
+      const rad = (parsedTheta * Math.PI) / 180;
+      const cosVal = Math.cos(rad);
+      const sinVal = Math.sin(rad);
+
+      // Count actual panels fitting the L-roof for parsedTheta
+      let panelCount = 0;
+      const step = parsedLado + 0.1; // grid step (including gap)
+      for (let u = -8; u <= 8; u += step) {
+        for (let v = -8; v <= 8; v += step) {
+          const rx = 6 + u * cosVal - v * sinVal;
+          const ry = 6 + u * sinVal + v * cosVal;
+          const inL = doesPanelFit(rx, ry, parsedLado, rad);
+          const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+          if (inL && !nearCorner) {
+            panelCount++;
+          }
+        }
+      }
+
+      const panelArea = parsedLado * parsedLado;
+      const activeArea = panelCount * panelArea;
+      const roofGeometricArea = 48.0; // exact area of L-roof
+      const areaMuerta = roofGeometricArea - activeArea;
+      const eficiencia = (activeArea / roofGeometricArea) * 100;
+
+      let output = `▶ Ejecutando solar_optimizer.py...\n`;
+      output += `─`.repeat(45) + `\n`;
+      output += `  SOLAR-MESH 2D OPTIMIZER\n`;
+      output += `─`.repeat(45) + `\n`;
+      output += `  Polígono base   = Hexágono (L-roof)\n`;
+      output += `  Área Techo      = ${roofGeometricArea.toFixed(1)} m²\n`;
+      output += `  Lado Panel L    = ${parsedLado.toFixed(2)} m\n`;
+      output += `  Ángulo Rotación = ${parsedTheta}°\n`;
+      output += `  Área Muerta     = ${areaMuerta.toFixed(4)} m²\n`;
+      output += `  Eficiencia      = ${eficiencia.toFixed(2)} %\n`;
+      output += `─`.repeat(45) + `\n`;
+      output += `✓ Simulación finalizada con éxito.`;
+      
+      consoleEl.textContent = output;
+      consoleEl.style.color = '#02f3e6';
+
+      // ── DRAW MATPLOTLIB CANVAS SIMULATION ──
+      canvas.style.display = 'block';
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#040914';
+      ctx.fillRect(0, 0, W, H);
+
+      // --- Left Plot: L-Roof and Panel grid ---
+      const scaleLeft = 16;
+      const dx = 35;
+      const dy = 45;
+      
+      // Draw title
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px JetBrains Mono';
+      ctx.fillText(`Planta del Techo L (Theta = ${parsedTheta}°)`, dx + 5, dy - 15);
+
+      // Draw L-shaped building outline
+      ctx.beginPath();
+      roofBasePoly.forEach((pt, idx) => {
+        const cx = dx + pt.x * scaleLeft;
+        const cy = dy + pt.y * scaleLeft;
+        idx === 0 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
+      });
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(2, 243, 230, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = '#02f3e6';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Rotated grid loop
+      for (let u = -8; u <= 8; u += step) {
+        for (let v = -8; v <= 8; v += step) {
+          const rx = 6 + u * cosVal - v * sinVal;
+          const ry = 6 + u * sinVal + v * cosVal;
+
+          const inL = doesPanelFit(rx, ry, parsedLado, rad);
+          const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+
+          if (inL) {
+            const scrX = dx + rx * scaleLeft;
+            const scrY = dy + ry * scaleLeft;
+            const pSizeLeft = parsedLado * scaleLeft;
+
+            ctx.save();
+            ctx.translate(scrX, scrY);
+            ctx.rotate(rad);
+
+            if (nearCorner) {
+              ctx.fillStyle = 'rgba(255, 77, 109, 0.4)';
+              ctx.strokeStyle = 'rgba(255, 77, 109, 0.8)';
+            } else {
+              ctx.fillStyle = 'rgba(255, 183, 3, 0.25)';
+              ctx.strokeStyle = 'rgba(255, 183, 3, 0.7)';
+            }
+            ctx.fillRect(-pSizeLeft / 2, -pSizeLeft / 2, pSizeLeft, pSizeLeft);
+            ctx.strokeRect(-pSizeLeft / 2, -pSizeLeft / 2, pSizeLeft, pSizeLeft);
+            ctx.restore();
+          }
+        }
+      }
+
+      // Draw red dot on corner
+      ctx.beginPath();
+      ctx.arc(dx + 6 * scaleLeft, dy + 6 * scaleLeft, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff4d6d';
+      ctx.fill();
+
+      // --- Right Plot: Bar Chart Comparison of Efficiency ---
+      const bx = 320;
+      const by0 = 210; // base y of bars
+      const barW = 38;
+      const gap = 24;
+
+      // Draw Title
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px JetBrains Mono';
+      ctx.fillText("Eficiencia Espacial (%)", bx, dy - 15);
+
+      // Draw axes
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bx - 10, dy);
+      ctx.lineTo(bx - 10, by0);
+      ctx.lineTo(bx + 180, by0);
+      ctx.stroke();
+
+      // Count actual panels for 0 deg
+      let panelCount0 = 0;
+      for (let u = -8; u <= 8; u += step) {
+        for (let v = -8; v <= 8; v += step) {
+          const rx = 6 + u;
+          const ry = 6 + v;
+          const inL = doesPanelFit(rx, ry, parsedLado, 0);
+          const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+          if (inL && !nearCorner) {
+            panelCount0++;
+          }
+        }
+      }
+      const eff0 = ((panelCount0 * panelArea) / roofGeometricArea) * 100;
+      
+      // Count actual panels for 45 deg
+      let panelCount45 = 0;
+      const cos45 = Math.cos(Math.PI / 4);
+      const sin45 = Math.sin(Math.PI / 4);
+      for (let u = -8; u <= 8; u += step) {
+        for (let v = -8; v <= 8; v += step) {
+          const rx = 6 + u * cos45 - v * sin45;
+          const ry = 6 + u * sin45 + v * cos45;
+          const inL = doesPanelFit(rx, ry, parsedLado, Math.PI / 4);
+          const nearCorner = (rx >= 5.75 && rx <= 6.25 && ry >= 5.75 && ry <= 6.25);
+          if (inL && !nearCorner) {
+            panelCount45++;
+          }
+        }
+      }
+      const eff45 = ((panelCount45 * panelArea) / roofGeometricArea) * 100;
+
+      const scenarios = [
+        { label: "0°", eff: eff0, color: '#ff4d6d' },
+        { label: "45°", eff: eff45, color: '#02f3e6' },
+        { label: `${parsedTheta}°`, eff: eficiencia, color: '#ffb703' }
+      ];
+
+      scenarios.forEach((sc, idx) => {
+        const xPos = bx + idx * (barW + gap);
+        const barH = (sc.eff / 100) * 130;
+        const yPos = by0 - barH;
+
+        ctx.fillStyle = sc.color;
+        ctx.fillRect(xPos, yPos, barW, barH);
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.strokeRect(xPos, yPos, barW, barH);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${sc.eff.toFixed(1)}%`, xPos + barW / 2, yPos - 5);
+        ctx.fillText(sc.label, xPos + barW / 2, by0 + 15);
+      });
+      ctx.textAlign = 'left'; // reset text alignment
+    }
+
+    function copyPythonCode() {
+      const code = document.getElementById('pyCode').value;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copyPyBtn');
+        btn.innerHTML = '<i class="fa-solid fa-check" style="color:#02f3e6"></i> ¡Copiado!';
+        btn.style.borderColor = '#02f3e6';
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copiar Código';
+          btn.style.borderColor = '';
+        }, 2000);
+      }).catch(err => {
+        alert('No se pudo copiar el código: ' + err);
+      });
+    }
+
+    function resetPython() {
+      document.getElementById('matplotCanvas').style.display = 'none';
+      document.getElementById('pyConsole').textContent = `▶ Listo para ejecución. Presione 'Ejecutar Script'...`;
+      document.getElementById('pyConsole').style.color = '#02f3e6';
+      updateOutputs();
+    }
+  </script>
+</body>
+</html>
